@@ -39,7 +39,7 @@ class Plane:
             plt.title("Area of " + self.title)
 
     def random_points(self, quantity):
-        # points = np.empty([quantity, 2]) # Pre-allocate array
+
         points = [] # Pre-allocate arra
 
         for i in range(0, quantity):
