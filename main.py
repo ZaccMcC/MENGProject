@@ -6,9 +6,6 @@ from areas import Areas
 import numpy as np
 import plotly.graph_objects as go
 
-import random
-import matplotlib.pyplot as plt
-
 ##### Initial definitions
 
 # Defines position and direction arrays for line
@@ -44,68 +41,33 @@ position = np.array([0,0,0])
 direction = np.array([0,0,1])
 # areas(self, title, position, direction, width, length):
 sensorArea = Areas("Sensor", position, direction, 1, 1)
-# def direction_vectors(array1, array2):
-#     check_direction = np.multiply(array1, array2)
-#     check_direction = np.sum(check_direction)
-#     return check_direction
-#
-#
-# def parametric_equation(np, na, nu):
-#     return (np - na)/nu
-#
-#
-# def calculate_intersection(line, t):
-#     x = line.direction[0] * t + line.position[0]
-#     y = line.direction[1] * t + line.position[1]
-#     z = line.direction[2] * t + line.position[2]
-#
-#     #coordinates = (x,y,z)
-#     coordinates = np.array([x,y,z])
-#     return coordinates
-#
-# nU = direction_vectors(sensorPlane.direction, line1.direction)
-#
-#
-# if nU > 0:
-#     #print(nU)
-#     nA = direction_vectors(sensorPlane.direction, line1.position)
-#     nP = direction_vectors(sensorPlane.direction, sensorPlane.position)
-#
-#     #print(nA)
-#     #print(nP)
-#     x = parametric_equation(nP, nA, nU)
-#     IntersectionCoordinates = calculate_intersection(line1, x)
-#     print("Intersection occurs at " + str(IntersectionCoordinates))
-# else:
-#     #print(nU)
-#     exit(1)
 
-##### Process results
-# Return the coordinates of intersection between plane and line
 
 IntersectionCoordinates = intersection_wrapper(sensorPlane, line1)
 
 
-# # Create the plot
-# fig = go.Figure()
-# fig.update_layout(
-#     scene=dict(
-#         xaxis_title='X',
-#         yaxis_title='Y',
-#         zaxis_title='Z'
-#     ),
-#     title="3D Planes at z=0 and z=1"
-# )
+# Create the plot
+fig = go.Figure()
+fig.update_layout(
+    scene=dict(
+        xaxis_title='X',
+        yaxis_title='Y',
+        zaxis_title='Z'
+    ),
+    title="3D Planes at z=0 and z=1"
+)
 
-# # Generate graphic for planes
-# fig = planes_plot(fig, sensorPlane, "red")
-#
-# fig = planes_plot(fig, sourcePlane, "yellow")
-#
-# fig = planes_plot(fig, interPlane, "green")
-#
-#
-# # # Generate graphic for lines
+# Generate graphic for planes
+fig = planes_plot(fig, sensorPlane, "red")
+
+fig = planes_plot(fig, sourcePlane, "yellow")
+
+fig = planes_plot(fig, interPlane, "green")
+
+fig = planes_plot(fig, sensorArea, "green")
+
+
+# # Generate graphic for test line
 # fig = plot_lines(fig, line1, IntersectionCoordinates)
 
 # Show the plot
@@ -145,15 +107,17 @@ for i in range(len(lines)):
     result = sensorArea.record_result(IntersectionCoordinates)
 
     if result == 1:
+        fig = plot_lines(fig, lines[i], IntersectionCoordinates, "green")
         # print("Hit")
         hit += 1
     elif result == 0:
+        fig = plot_lines(fig, lines[i], IntersectionCoordinates, "red")
         # print("Miss")
         miss += 1
     # Generate graphic for lines
     # fig = plot_lines(fig, lines[i], IntersectionCoordinates)
 
-# fig.show()
+fig.show()
 
 print("Total number of hits recorded = " + str(hit))
 print("Total number of misses recorded = " + str(miss))

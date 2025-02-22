@@ -1,6 +1,4 @@
 import plotly.graph_objects as go
-from line import Line
-from plane import Plane
 import numpy as np
 
 def planes_plot(fig, graphicPlane, colour):
@@ -22,7 +20,7 @@ def planes_plot(fig, graphicPlane, colour):
 
     return fig
 
-def plot_lines(fig, line, cords):
+def plot_lines(fig, line, cords, colour):
 
    # fig.add_trace(go.Scatter3d(x=[0, 0], y=[0, 0], z =[1, 0], mode='lines'))
 
@@ -32,6 +30,6 @@ def plot_lines(fig, line, cords):
     x = [line.position[0], cords[0]]
     y = [line.position[1], cords[1]]
     z = [line.position[2], cords[2]]
-    fig.add_trace(go.Scatter3d(x=x, y=y, z =z, mode='lines',line = {'color' : 'purple', 'width' : 3}))
+    fig.add_trace(go.Scatter3d(x=x, y=y, z =z, mode='lines',showlegend=False,line = {'color' : colour, 'width' : 3}))
 
     return fig

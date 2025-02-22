@@ -18,15 +18,6 @@ class Areas:
         ])
 ## Checking for intersection between area and intersection (with sensor plane) coordinates
     def record_result(self, cords):
-        #print("Intersection coordinate at " + str(cords))
-        #print("At x = " + str(cords[0]) + " y = " + str(cords[1]) + " z = " + str(cords[2]))
-
-        # # True, if intersection x coordinate is within area boundary
-        # if self.corners[0][0] <= cords[0] <= self.corners[0][1]: #
-        #     print(str(cords[0]) + " is within the boundary " + str(self.corners[0][0]) + " : " + str(self.corners[0][1]))
-        # else:
-        #     print(str(cords[0]) + " is NOT within the boundary " + str(self.corners[0][0]) + " : " + str(self.corners[0][1]))
-
             # True, if intersection x coordinate is within area boundary (x min and x max)
         if (self.position[0] - (self.width/2) <= cords[0] <= self.position[0] + (self.width/2)
             and # True, if intersection y coordinate is within area boundary (y min and y max)
