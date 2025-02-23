@@ -1,4 +1,3 @@
-from graphicPlot import planes_plot, plot_lines
 from intersectionCalculations import intersection_wrapper
 from line import Line
 from plane import Plane
@@ -8,44 +7,44 @@ import plotly.graph_objects as go
 
 ##### Initial definitions
 
-# Defines position and direction arrays for line
-position = np.array([0,0,1])
-direction = np.array([0,0,1])
+""" Defines position and direction arrays for line """
+position = np.array([0, 0, 1])
+direction = np.array([0, 0, 1])
 
-# Create instance "line1" of object Line with pos and dir
+""" Create instance "line1" of object Line with pos and dir """
 line1 = Line(position, direction)
 
 # Defines position and direction arrays for sensor plane
-position = np.array([0,0,0])
-direction = np.array([0,0,1])
+position = np.array([0, 0, 0])
+direction = np.array([0, 0, 1])
 
-# Defines source plane
-sensorPlane = Plane("Sensor Plane",position, direction, 10, 10)
+""" Defines source plane """
+sensorPlane = Plane("Sensor Plane", position, direction, 10, 10)
 
 # Defines position and direction arrays for source plane
-position = np.array([0,0,2])
-direction = np.array([0,0,1])
+position = np.array([0, 0, 2])
+direction = np.array([0, 0, 1])
 
 # Defines source plane
 sourcePlane = Plane("Source Plane", position, direction, 10, 10)
 
 # Defines position and direction arrays for test plane
-position = np.array([0,0,1])
-direction = np.array([0,0,1])
+position = np.array([0, 0, 1])
+direction = np.array([0, 0, 1])
 
 # Defines test plane
-interPlane = Plane("Interplane", position, direction, 5, 5)
+interPlane = Plane("Inter-plane", position, direction, 5, 5)
 
 # Define test area
-position = np.array([0,0,0])
-direction = np.array([0,0,1])
+position = np.array([0, 0, 0])
+direction = np.array([0, 0, 1])
 # areas(self, title, position, direction, width, length):
 sensorArea = Areas("Sensor", position, direction, 1, 1)
 
+# Test calculation
+# IntersectionCoordinates = intersection_wrapper(sensorPlane, line1)
 
-IntersectionCoordinates = intersection_wrapper(sensorPlane, line1)
-
-
+##### Graphic handling
 # Create the plot
 fig = go.Figure()
 fig.update_layout(
@@ -58,28 +57,26 @@ fig.update_layout(
 )
 
 # Generate graphic for planes
-fig = planes_plot(fig, sensorPlane, "red")
+fig = sensorPlane.planes_plot_3d(fig,"red")
 
-fig = planes_plot(fig, sourcePlane, "yellow")
+fig = sourcePlane.planes_plot_3d(fig, "yellow")
 
-fig = planes_plot(fig, interPlane, "green")
+fig = interPlane.planes_plot_3d(fig, "green")
 
-fig = planes_plot(fig, sensorArea, "green")
-
+fig = sensorArea.area_plot_3d(fig, "green")
 
 # # Generate graphic for test line
 # fig = plot_lines(fig, line1, IntersectionCoordinates)
 
 # Show the plot
-#fig.show()
+# fig.show()
 
 # sensorPlane.plot_area()
 # plt.show()
 
 
-
 randomPoints = sourcePlane.random_points(60)
-# print(randomPoints)
+
 
 # randomPoints = np.array([[-0.6, 0.4], [-0.3, 0.4]])
 
@@ -95,7 +92,8 @@ randomPoints = sourcePlane.random_points(60)
 
 
 # # Use random points to generate lines
-lines = [Line((randomPoints[i][0], randomPoints[i][1], sourcePlane.position[2]), direction) for i in range(0, len(randomPoints))]
+lines = [Line((randomPoints[i][0], randomPoints[i][1], sourcePlane.position[2]), direction) for i in
+         range(0, len(randomPoints))]
 
 # Initialise hit / miss values before looping
 hit = 0
@@ -107,11 +105,11 @@ for i in range(len(lines)):
     result = sensorArea.record_result(IntersectionCoordinates)
 
     if result == 1:
-        fig = plot_lines(fig, lines[i], IntersectionCoordinates, "green")
+        fig = lines[i].plot_lines_3d(fig, IntersectionCoordinates, "green")
         # print("Hit")
         hit += 1
     elif result == 0:
-        fig = plot_lines(fig, lines[i], IntersectionCoordinates, "red")
+        fig = lines[i].plot_lines_3d(fig, IntersectionCoordinates, "red")
         # print("Miss")
         miss += 1
     # Generate graphic for lines
