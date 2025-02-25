@@ -1,121 +1,145 @@
-from intersectionCalculations import intersection_wrapper
-from line import Line
-from plane import Plane
-from areas import Areas
-import numpy as np
-import plotly.graph_objects as go
-
-##### Initial definitions
-
-""" Defines position and direction arrays for line """
-position = np.array([0, 0, 1])
-direction = np.array([0, 0, 1])
-
-""" Create instance "line1" of object Line with pos and dir """
-line1 = Line(position, direction)
-
-# Defines position and direction arrays for sensor plane
-position = np.array([0, 0, 0])
-direction = np.array([0, 0, 1])
-
-""" Defines source plane """
-sensorPlane = Plane("Sensor Plane", position, direction, 10, 10)
-
-# Defines position and direction arrays for source plane
-position = np.array([0, 0, 2])
-direction = np.array([0, 0, 1])
-
-# Defines source plane
-sourcePlane = Plane("Source Plane", position, direction, 10, 10)
-
-# Defines position and direction arrays for test plane
-position = np.array([0, 0, 1])
-direction = np.array([0, 0, 1])
-
-# Defines test plane
-interPlane = Plane("Inter-plane", position, direction, 5, 5)
-
-# Define test area
-position = np.array([0, 0, 0])
-direction = np.array([0, 0, 1])
-# areas(self, title, position, direction, width, length):
-sensorArea = Areas("Sensor", position, direction, 1, 1)
-
-# Test calculation
-# IntersectionCoordinates = intersection_wrapper(sensorPlane, line1)
-
-##### Graphic handling
-# Create the plot
-fig = go.Figure()
-fig.update_layout(
-    scene=dict(
-        xaxis_title='X',
-        yaxis_title='Y',
-        zaxis_title='Z'
-    ),
-    title="3D Planes at z=0 and z=1"
-)
-
-# Generate graphic for planes
-fig = sensorPlane.planes_plot_3d(fig,"red")
-
-fig = sourcePlane.planes_plot_3d(fig, "yellow")
-
-fig = interPlane.planes_plot_3d(fig, "green")
-
-fig = sensorArea.area_plot_3d(fig, "green")
-
-# # Generate graphic for test line
-# fig = plot_lines(fig, line1, IntersectionCoordinates)
-
-# Show the plot
-# fig.show()
-
-# sensorPlane.plot_area()
-# plt.show()
+from intersectionCalculations import intersection_wrapper  # Import for calculating line-plane intersection
+from line import Line  # Import for Line object
+from plane import Plane  # Import for Plane object
+from areas import Areas  # Import for target areas
+import numpy as np  # For mathematical operations
+import plotly.graph_objects as go  # For 3D visualization
 
 
-randomPoints = sourcePlane.random_points(60)
+def initialise_planes_and_areas():
+    """
+Initialises all planes and the target area.
+Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
+"""
+    # Define the sensor plane
+    sensor_plane_position = np.array([0, 0, 0])
+    sensor_plane_direction = np.array([0, 0, 1])
+    sensorPlane = Plane("Sensor Plane", sensor_plane_position, sensor_plane_direction, 10, 10)
+
+    # Define the source plane
+    source_plane_position = np.array([0, 0, 2])
+    source_plane_direction = np.array([0, 0, 1])
+    sourcePlane = Plane("Source Plane", source_plane_position, source_plane_direction, 10, 10)
+
+    # Define the intermediate plane
+    inter_plane_position = np.array([0, 0, 1])
+    inter_plane_direction = np.array([0, 0, 1])
+    interPlane = Plane("Inter-plane", inter_plane_position, inter_plane_direction, 5, 5)
+
+    # Define the sensor area (target area on the sensor plane)
+    sensor_area_position = np.array([0, 0, 0])
+    sensor_area_direction = np.array([0, 0, 1])
+    sensorArea = Areas("Sensor", sensor_area_position, sensor_area_direction, 1, 1)
+
+    return sensorPlane, sourcePlane, interPlane, sensorArea
+
+def initialise_3d_plot():
+    """
+    Initializes a 3D plot using Plotly.
+    Returns: A Plotly figure object.
+    """
+    fig = go.Figure()
+    fig.update_layout(
+        scene=dict(
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title='Z'
+        ),
+        title="3D Planes and Lines Visualization"
+    )
+    return fig
+
+def visualise_environment(fig, sensorPlane, sourcePlane, interPlane, sensorArea):
+    """
+    Adds planes and areas to the 3D plot for visualisation.
+    Returns: Updated Plotly figure.
+    """
+    fig = sensorPlane.planes_plot_3d(fig, "red")
+    fig = sourcePlane.planes_plot_3d(fig, "yellow")
+    fig = interPlane.planes_plot_3d(fig, "green")
+    fig = sensorArea.area_plot_3d(fig, "green")
+    return fig
+
+def create_lines_from_random_points(sourcePlane, num_points, direction):
+    """
+    Randomly generates points on the source plane and creates lines originating
+    from those points.
+
+    Args:
+        sourcePlane: The plane on which random points will be generated.
+        num_points: Number of random points to generate.
+        direction: Direction vector for the lines.
+
+    Returns:
+        A list of Line objects.
+    """
+    randomPoints = sourcePlane.random_points(num_points)
+    lines = [
+        Line((point[0], point[1], sourcePlane.position[2]), direction)
+        for point in randomPoints
+    ]
+    return lines
 
 
-# randomPoints = np.array([[-0.6, 0.4], [-0.3, 0.4]])
+def evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines):
+    """
+    Checks intersections of lines with the sensor plane and evaluates
+    whether they hit the target area.
+    Visualizes hits in green and misses in red.
+
+    Args:
+        fig: The 3D Plotly figure for visualization.
+        sensorPlane: The plane intersecting with the lines.
+        sensorArea: The target area to evaluate hits.
+        lines: List of Line objects.
+
+    Returns:
+        Updated Plotly figure, number of hits, number of misses.
+    """
+    hit = 0
+    miss = 0
+
+    for line in lines:
+        # Calculate intersection between the line and the sensor plane
+        intersection_coordinates = intersection_wrapper(sensorPlane, line)
+
+        # Check if the intersection point is in the target area
+        result = sensorArea.record_result(intersection_coordinates)
+
+        if result == 1:  # Hit
+            fig = line.plot_lines_3d(fig, intersection_coordinates, "green")
+            hit += 1
+        elif result == 0:  # Miss
+            fig = line.plot_lines_3d(fig, intersection_coordinates, "red")
+            miss += 1
+
+    return fig, hit, miss
 
 
-# # Plot of source plane
-# sourcePlane.plot_area()
-#
-# # Add point markers to the plane plot
-# for i in range(0, len(randomPoints)):
-#     sourcePlane.plot_points(randomPoints[i])
-#
-# plt.show()
+def main():
+    """
+    Runs the main program
+        initialising objects, visualising,
+    and
+        evaluating line-plane intersections.
+    """
+    # Step 1: Initialize planes and areas
+    sensorPlane, sourcePlane, interPlane, sensorArea = initialise_planes_and_areas()
 
+    # Step 2: Create 3D plot and visualize environment
+    fig = initialise_3d_plot()
+    fig = visualise_environment(fig, sensorPlane, sourcePlane, interPlane, sensorArea)
 
-# # Use random points to generate lines
-lines = [Line((randomPoints[i][0], randomPoints[i][1], sourcePlane.position[2]), direction) for i in
-         range(0, len(randomPoints))]
+    # Step 3: Generate random points and create lines
+    direction = np.array([0, 0, 1])  # Direction vector for all lines
+    lines = create_lines_from_random_points(sourcePlane, num_points=60, direction=direction)
 
-# Initialise hit / miss values before looping
-hit = 0
-miss = 0
+    # Step 4: Evaluate hits and visualize lines
+    fig, hit, miss = evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines)
 
-for i in range(len(lines)):
+    # Step 5: Display the plot and results
+    fig.show()
+    print(f"Total number of hits recorded: {hit}")
+    print(f"Total number of misses recorded: {miss}")
 
-    IntersectionCoordinates = intersection_wrapper(sensorPlane, lines[i])
-    result = sensorArea.record_result(IntersectionCoordinates)
-
-    if result == 1:
-        fig = lines[i].plot_lines_3d(fig, IntersectionCoordinates, "green")
-        # print("Hit")
-        hit += 1
-    elif result == 0:
-        fig = lines[i].plot_lines_3d(fig, IntersectionCoordinates, "red")
-        # print("Miss")
-        miss += 1
-    # Generate graphic for lines
-    # fig = plot_lines(fig, lines[i], IntersectionCoordinates)
-
-fig.show()
-
-print("Total number of hits recorded = " + str(hit))
-print("Total number of misses recorded = " + str(miss))
+main()
