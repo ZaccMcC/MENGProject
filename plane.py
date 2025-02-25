@@ -37,7 +37,8 @@ class Plane:
                                  # Ensures a uniform color
                                  surfacecolor=color_value,
                                  colorscale=[[0, colour], [1, colour]],  # Uniform red color
-                                 showscale=False))  # Hide color scale
+                                 showscale=False,
+                                 name=str(self.title)))  # Hide color scale
 
         return fig
 

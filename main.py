@@ -12,8 +12,8 @@ Initialises all planes and the target area.
 Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
 """
     # Define the sensor plane
-    sensor_plane_position = np.array([0, 0, 0])
-    sensor_plane_direction = np.array([0, 0, 1])
+    sensor_plane_position = np.array([0, 0, 0]) # Defines its position (centre point)
+    sensor_plane_direction = np.array([0, 0, 1]) # Defines its direction (facing down)
     sensorPlane = Plane("Sensor Plane", sensor_plane_position, sensor_plane_direction, 10, 10)
 
     # Define the source plane
@@ -46,18 +46,17 @@ def initialise_3d_plot():
             zaxis_title='Z'
         ),
         title="3D Planes and Lines Visualization"
+
     )
+    fig.update_traces(showlegend = True)
     return fig
 
-def visualise_environment(fig, sensorPlane, sourcePlane, interPlane, sensorArea):
+def visualise_environment(fig, planeObject, colour): # sensorPlane, sourcePlane, interPlane, sensorArea):
     """
     Adds planes and areas to the 3D plot for visualisation.
     Returns: Updated Plotly figure.
     """
-    fig = sensorPlane.planes_plot_3d(fig, "red")
-    fig = sourcePlane.planes_plot_3d(fig, "yellow")
-    fig = interPlane.planes_plot_3d(fig, "green")
-    fig = sensorArea.area_plot_3d(fig, "green")
+    fig = planeObject.planes_plot_3d(fig, colour)
     return fig
 
 def create_lines_from_random_points(sourcePlane, num_points, direction):
@@ -75,9 +74,7 @@ def create_lines_from_random_points(sourcePlane, num_points, direction):
     """
     randomPoints = sourcePlane.random_points(num_points)
     lines = [
-        Line((point[0], point[1], sourcePlane.position[2]), direction)
-        for point in randomPoints
-    ]
+        Line((point[0], point[1], sourcePlane.position[2]), direction) for point in randomPoints]
     return lines
 
 
@@ -128,7 +125,11 @@ def main():
 
     # Step 2: Create 3D plot and visualize environment
     fig = initialise_3d_plot()
-    fig = visualise_environment(fig, sensorPlane, sourcePlane, interPlane, sensorArea)
+    fig = visualise_environment(fig, sensorPlane, "red")
+    fig = visualise_environment(fig, sourcePlane, "yellow")
+    fig = visualise_environment(fig, interPlane, "green")
+    fig = visualise_environment(fig, sensorArea, "red")
+
 
     # Step 3: Generate random points and create lines
     direction = np.array([0, 0, 1])  # Direction vector for all lines
@@ -142,4 +143,5 @@ def main():
     print(f"Total number of hits recorded: {hit}")
     print(f"Total number of misses recorded: {miss}")
 
-main()
+if __name__ == "__main__":
+    main()
