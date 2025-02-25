@@ -8,12 +8,12 @@ import plotly.graph_objects as go  # For 3D visualization
 
 
 # Step 1: Initialize planes and areas
-sensorPlane, sourcePlane, interPlane, sensorArea = initialise_planes_and_areas()
+# sensorPlane, sourcePlane, interPlane, sensorArea = initialise_planes_and_areas()
 
 # Step 2: Create 3D plot and visualize environment
 fig = initialise_3d_plot()
-fig = visualise_environment(fig, sensorPlane, "red")
-fig = visualise_environment(fig, sourcePlane, "yellow")
+# fig = visualise_environment(fig, sensorPlane, "red")
+# fig = visualise_environment(fig, sourcePlane, "yellow")
 
 
 def do_rotation():
@@ -23,17 +23,52 @@ def do_rotation():
 
 thetaD = 45
 theta = np.radians(thetaD)
-coords = np.array([4,1])
-R_x = np.array([[np.cos(theta), - np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+coords = np.array([0, 0, 1])
+# R_x = np.array([[np.cos(theta), - np.sin(theta)],
+#                 [np.sin(theta), np.cos(theta)]])
 
-new_coords = np.dot(R_x, coords)
+R_x = np.array([
+                [1, 0, 0],
+                [0, np.cos(theta), - np.sin(theta)],
+                [0, np.sin(theta), np.cos(theta)]
+                ])
 
-print("Coords are : ")
-print(coords)
+R_y = np.array([
+               [np.cos(theta), 0, np.sin(theta)],
+               [0, 1, 0],
+               [-np.sin(theta), 0, np.cos(theta)]
+               ])
 
-print("Rotation matrix is : ")
-print(R_x)
+R_z = np.array([
+                [np.cos(theta), - np.sin(theta), 0],
+                [np.sin(theta), 0, np.cos(theta)],
+                [0, 0, 1]
+               ])
 
-print("New coords are: ")
-print(new_coords)
 
+def rotate_coords(coords, R, colour):
+    new_coords = np.dot(R, coords)
+
+    direction = np.array([0, 0, 1])
+    line1 = Line((coords[0], coords[1], coords[2]), direction)
+
+    line1.plot_lines_3d(fig, [0,0,0], "green")
+
+    line2 = Line((new_coords[0], new_coords[1], new_coords[2]), direction)
+
+    line2.plot_lines_3d(fig, [0,0,0], colour)
+
+
+    print("Coords are : ")
+    print(coords)
+
+    print("Rotation matrix is : ")
+    print(R_x)
+
+    print("New coords are: ")
+    print(new_coords)
+
+rotate_coords(coords, R_x, "blue")
+rotate_coords(coords, R_y, "red")
+rotate_coords(coords, R_z, "yellow")
+fig.show()
