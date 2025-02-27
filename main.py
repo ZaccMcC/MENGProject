@@ -1,9 +1,11 @@
 from intersectionCalculations import intersection_wrapper  # Import for calculating line-plane intersection
 from line import Line  # Import for Line object
-from plane import Plane  # Import for Plane object
+from plane import Plane, compute_local_axes  # Import for Plane object
 from areas import Areas  # Import for target areas
 import numpy as np  # For mathematical operations
 import plotly.graph_objects as go  # For 3D visualization
+
+# from rotationTest import sourcePlane
 
 
 def initialise_planes_and_areas():
@@ -16,11 +18,6 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
     sensor_plane_direction = np.array([0, 0, 1]) # Defines its direction (facing down)
     sensorPlane = Plane("Sensor Plane", sensor_plane_position, sensor_plane_direction, 10, 10)
 
-    # Define the source plane
-    source_plane_position = np.array([0, 0, 2])
-    source_plane_direction = np.array([0, 0, 1])
-    sourcePlane = Plane("Source Plane", source_plane_position, source_plane_direction, 10, 10)
-
     # Define the intermediate plane
     inter_plane_position = np.array([0, 0, 1])
     inter_plane_direction = np.array([0, 0, 1])
@@ -31,11 +28,18 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
     sensor_area_direction = np.array([0, 0, 1])
     sensorArea = Areas("Sensor", sensor_area_position, sensor_area_direction, 1, 1)
 
+    # Define the source plane
+    source_plane_position = np.array([0, 0, 2])
+    source_plane_direction = np.array([0, 0, 1])
+    sourcePlane = Plane("Source Plane", source_plane_position, source_plane_direction, 10, 10)
+
     return sensorPlane, sourcePlane, interPlane, sensorArea
 
-def initialise_3d_plot():
+def initialise_3d_plot(sourcePlane):
     """
-    Initializes a 3D plot using Plotly.
+    Initialises a 3D plot using Plotly.
+    Generates a global axis for the plot.
+
     Returns: A Plotly figure object.
     """
     fig = go.Figure()
@@ -43,11 +47,32 @@ def initialise_3d_plot():
         scene=dict(
             xaxis_title='X',
             yaxis_title='Y',
-            zaxis_title='Z'
+            zaxis_title='Z',
         ),
         title="3D Planes and Lines Visualization"
 
     )
+
+    global_axis = compute_local_axes(sourcePlane.normal)
+    axis_colours = ['red', 'green', 'blue']
+    axis_names = ['Right', 'Up', 'Normal']
+
+    for i in range(3):
+        unit_vector = global_axis[i] / np.linalg.norm(global_axis[i])  # Normalize
+        start = np.array([0, 0, 0])  # Origin of local axes at plane's position
+        end = 0 + unit_vector  # Unit length
+
+        fig.add_trace(go.Scatter3d(
+            x=[start[0], end[0]],
+            y=[start[1], end[1]],
+            z=[start[2], end[2]],
+            mode='lines+markers',
+            line=dict(color=axis_colours[i], width=5),
+            marker=dict(size=8, color=axis_colours[i], opacity=0.8),
+            name=axis_names[i],
+            showlegend=True
+    ))
+
     fig.update_traces(showlegend = True)
     return fig
 
@@ -124,7 +149,7 @@ def main():
     sensorPlane, sourcePlane, interPlane, sensorArea = initialise_planes_and_areas()
 
     # Step 2: Create 3D plot and visualize environment
-    fig = initialise_3d_plot()
+    fig = initialise_3d_plot(sourcePlane)
     fig = visualise_environment(fig, sensorPlane, "red")
     fig = visualise_environment(fig, sourcePlane, "yellow")
     fig = visualise_environment(fig, interPlane, "green")

@@ -8,67 +8,87 @@ import plotly.graph_objects as go  # For 3D visualization
 
 
 # Step 1: Initialize planes and areas
-# sensorPlane, sourcePlane, interPlane, sensorArea = initialise_planes_and_areas()
+sensorPlane, sourcePlane, interPlane, sensorArea = initialise_planes_and_areas()
 
 # Step 2: Create 3D plot and visualize environment
 fig = initialise_3d_plot()
-# fig = visualise_environment(fig, sensorPlane, "red")
-# fig = visualise_environment(fig, sourcePlane, "yellow")
-
-
-def do_rotation():
-    x = 1
-
-# fig.show()
+fig = visualise_environment(fig, sourcePlane, "yellow")
 
 thetaD = 45
 theta = np.radians(thetaD)
-coords = np.array([0, 0, 1])
-# R_x = np.array([[np.cos(theta), - np.sin(theta)],
-#                 [np.sin(theta), np.cos(theta)]])
 
-R_x = np.array([
-                [1, 0, 0],
-                [0, np.cos(theta), - np.sin(theta)],
-                [0, np.sin(theta), np.cos(theta)]
-                ])
+def do_rotation(degrees, axis):
+    theta = np.radians(degrees)
+    if axis == "x":
+        R = np.array([
+            [1, 0, 0],
+            [0, np.cos(theta), - np.sin(theta)],
+            [0, np.sin(theta), np.cos(theta)]
+        ])
+    elif axis == "y":
+        R = np.array([
+            [np.cos(theta), 0, np.sin(theta)],
+            [0, 1, 0],
+            [-np.sin(theta), 0, np.cos(theta)]
+        ])
+    elif axis == "z":
+        R = np.array([
+            [np.cos(theta), - np.sin(theta), 0],
+            [np.sin(theta), np.cos(theta), 0],
+            [0, 0, 1]
+        ])
+    else :
+        print("Invalid axis")
+        R = np.array([1,1,1])
+    return R
 
-R_y = np.array([
-               [np.cos(theta), 0, np.sin(theta)],
-               [0, 1, 0],
-               [-np.sin(theta), 0, np.cos(theta)]
-               ])
+# # X-axis Rotation
+# rotated_plane_x = Plane(f"Rotated {thetaD} degrees in x-axis",
+#                         sourcePlane.position,
+#                         sourcePlane.direction,
+#                         sourcePlane.width,
+#                         sourcePlane.length)
+#
+# rotated_plane_x.rotate_plane(do_rotation(45, "x"))
+#
+# fig = visualise_environment(fig, rotated_plane_x, "green")
+# #
+# # Y-axis Rotation
+# rotated_plane_y = Plane(f"Rotated {thetaD} degrees in y-axis",
+#                         sourcePlane.position,
+#                         sourcePlane.direction,
+#                         sourcePlane.width,
+#                         sourcePlane.length)
+# rotated_plane_y.rotate_plane(do_rotation(45, "y"))
+# fig = visualise_environment(fig, rotated_plane_y, "blue")
+#
+# # Z-axis Rotation
+# rotated_plane_z = Plane(f"Rotated {thetaD} degrees in z-axis",
+#                         sourcePlane.position,
+#                         sourcePlane.direction,
+#                         sourcePlane.width,
+#                         sourcePlane.length)
+# rotated_plane_z.rotate_plane(do_rotation(45, "z"))
+# fig = visualise_environment(fig, rotated_plane_z, "purple")
 
-R_z = np.array([
-                [np.cos(theta), - np.sin(theta), 0],
-                [np.sin(theta), 0, np.cos(theta)],
-                [0, 0, 1]
-               ])
+# translated_plane = Plane(f"Translated {thetaD} degrees in z-axis",
+#                                 sourcePlane.position,
+#                                 sourcePlane.direction,
+#                                 sourcePlane.width,
+#                                 sourcePlane.length)
+# translated_plane.translate_plane(np.array([0, 5, 0]))
+# translated_plane.rotate_plane(do_rotation(thetaD, "z"))
+# fig = visualise_environment(fig, translated_plane, "green")
+fig.update_layout(
+    scene=dict(
+        aspectmode="cube",  # Ensures uniform scaling
+        xaxis=dict(title="X-Axis", range=[-5, 5]),  # Set equal ranges
+        yaxis=dict(title="Y-Axis", range=[-5, 5]),  # Adjust based on your data
+        zaxis=dict(title="Z-Axis", range=[-5, 5])   # Keep Z range similar
+    )
+)
 
 
-def rotate_coords(coords, R, colour):
-    new_coords = np.dot(R, coords)
-
-    direction = np.array([0, 0, 1])
-    line1 = Line((coords[0], coords[1], coords[2]), direction)
-
-    line1.plot_lines_3d(fig, [0,0,0], "green")
-
-    line2 = Line((new_coords[0], new_coords[1], new_coords[2]), direction)
-
-    line2.plot_lines_3d(fig, [0,0,0], colour)
-
-
-    print("Coords are : ")
-    print(coords)
-
-    print("Rotation matrix is : ")
-    print(R_x)
-
-    print("New coords are: ")
-    print(new_coords)
-
-rotate_coords(coords, R_x, "blue")
-rotate_coords(coords, R_y, "red")
-rotate_coords(coords, R_z, "yellow")
 fig.show()
+
+# print(sourcePlane.right)
