@@ -38,12 +38,12 @@ class Plane:
         self.length = length
 
         # Compute local reference frame (right, up, normal)
-        self.right, self.up, self.normal = compute_local_axes(self.direction)
+        self.right, self.up, self.direction = compute_local_axes(self.direction)
 
         # Compute initial corners using the local frame
-        self.update_corners(0)
+        self.update_corners()
 
-    def update_corners(self, type):
+    def update_corners(self):
         """
         Recalculate the plane's corner positions using its local coordinate system.
         """
@@ -56,11 +56,7 @@ class Plane:
             self.position + (half_width * self.right - half_length * self.up),   # Bottom Right
             self.position + (-half_width * self.right - half_length * self.up)   # Bottom Left
         ])
-        if type == 0:
-            print(f"Creating corners for {self.title}:")
-        elif type != 0:
-            print(f"Updating corners for {self.title}:")
-            print(f"Corners: \n {self.corners}")
+
 
 
     def rotate_plane(self, rotation_matrix):
@@ -74,10 +70,10 @@ class Plane:
         # Rotate local axes
         self.right = np.dot(rotation_matrix, self.right)
         self.up = np.dot(rotation_matrix, self.up)
-        self.normal = np.dot(rotation_matrix, self.normal)
+        self.direction = np.dot(rotation_matrix, self.direction)
         # print(f"Rotated --- right: {self.right}, up: {self.up}, normal: {self.normal}")
         # Recalculate corners after rotating the local frame
-        self.update_corners(1)
+        self.update_corners()
 
     def translate_plane(self, translation_vector):
         self.position = self.position + translation_vector
@@ -103,7 +99,8 @@ class Plane:
         fig.add_trace(go.Mesh3d(
             x=x, y=y, z=z,
             color=colour,
-            opacity=0.5
+            opacity=0.5,
+            name=self.title
         ))
 
             # Add a dummy trace for the legend
@@ -125,7 +122,7 @@ class Plane:
                 showlegend=False
             ))
 
-        local_axis = np.array([self.right, self.up, self.normal])
+        local_axis = np.array([self.right, self.up, self.direction])
         local_axis_colours = ['red', 'green', 'blue']
         local_axis_names = ['Right', 'Up', 'Normal']
 

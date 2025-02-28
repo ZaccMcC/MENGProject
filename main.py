@@ -13,6 +13,12 @@ def initialise_planes_and_areas():
 Initialises all planes and the target area.
 Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
 """
+
+    # Define the source plane
+    source_plane_position = np.array([0, 0, 2])
+    source_plane_direction = np.array([0, 0, 1])
+    sourcePlane = Plane("Source Plane", source_plane_position, source_plane_direction, 10, 10)
+
     # Define the sensor plane
     sensor_plane_position = np.array([0, 0, 0]) # Defines its position (centre point)
     sensor_plane_direction = np.array([0, 0, 1]) # Defines its direction (facing down)
@@ -24,14 +30,9 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
     interPlane = Plane("Inter-plane", inter_plane_position, inter_plane_direction, 5, 5)
 
     # Define the sensor area (target area on the sensor plane)
-    sensor_area_position = np.array([0, 0, 0])
+    sensor_area_position = np.array([4, 3, 0])
     sensor_area_direction = np.array([0, 0, 1])
-    sensorArea = Areas("Sensor", sensor_area_position, sensor_area_direction, 1, 1)
-
-    # Define the source plane
-    source_plane_position = np.array([0, 0, 2])
-    source_plane_direction = np.array([0, 0, 1])
-    sourcePlane = Plane("Source Plane", source_plane_position, source_plane_direction, 10, 10)
+    sensorArea = Areas("Sensor", sensor_area_position, sensor_area_direction, 2, 2)
 
     return sensorPlane, sourcePlane, interPlane, sensorArea
 
@@ -42,18 +43,23 @@ def initialise_3d_plot(sourcePlane):
 
     Returns: A Plotly figure object.
     """
+    lims = 10
     fig = go.Figure()
     fig.update_layout(
         scene=dict(
             xaxis_title='X',
             yaxis_title='Y',
             zaxis_title='Z',
+            aspectmode="cube",  # Ensures uniform scaling
+            xaxis=dict(title="X-Axis", range=[-lims, lims]),  # Set equal ranges
+            yaxis=dict(title="Y-Axis", range=[-lims, lims]),  # Adjust based on your data
+            zaxis=dict(title="Z-Axis", range=[-lims, lims])   # Keep Z range similar
         ),
         title="3D Planes and Lines Visualization"
 
     )
 
-    global_axis = compute_local_axes(sourcePlane.normal)
+    global_axis = compute_local_axes(sourcePlane.direction)
     axis_colours = ['red', 'green', 'blue']
     axis_names = ['Right', 'Up', 'Normal']
 
@@ -69,8 +75,9 @@ def initialise_3d_plot(sourcePlane):
             mode='lines+markers',
             line=dict(color=axis_colours[i], width=5),
             marker=dict(size=8, color=axis_colours[i], opacity=0.8),
-            name=axis_names[i],
-            showlegend=True
+            name=f"{axis_names[i]}",
+            showlegend=True,
+            hovertext=[f"Global axis: {axis_names[i]}"]  # Appears when hovering
     ))
 
     fig.update_traces(showlegend = True)
@@ -137,6 +144,30 @@ def evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines):
 
     return fig, hit, miss
 
+def do_rotation(degrees, axis):
+    theta = np.radians(degrees)
+    if axis == "x":
+        R = np.array([
+            [1, 0, 0],
+            [0, np.cos(theta), - np.sin(theta)],
+            [0, np.sin(theta), np.cos(theta)]
+        ])
+    elif axis == "y":
+        R = np.array([
+            [np.cos(theta), 0, np.sin(theta)],
+            [0, 1, 0],
+            [-np.sin(theta), 0, np.cos(theta)]
+        ])
+    elif axis == "z":
+        R = np.array([
+            [np.cos(theta), - np.sin(theta), 0],
+            [np.sin(theta), np.cos(theta), 0],
+            [0, 0, 1]
+        ])
+    else :
+        print("Invalid axis")
+        R = np.array([1,1,1])
+    return R
 
 def main():
     """
@@ -152,8 +183,21 @@ def main():
     fig = initialise_3d_plot(sourcePlane)
     fig = visualise_environment(fig, sensorPlane, "red")
     fig = visualise_environment(fig, sourcePlane, "yellow")
-    fig = visualise_environment(fig, interPlane, "green")
-    fig = visualise_environment(fig, sensorArea, "red")
+    # fig = visualise_environment(fig, interPlane, "green")
+    fig = visualise_environment(fig, sensorArea, "#00FF00")
+
+    thetaD = 45
+    theta = np.radians(thetaD)
+    # X-axis Rotation
+    rotated_plane_x = Plane(f"Rotated {theta} degrees in x-axis",
+                            sourcePlane.position,
+                            sourcePlane.direction,
+                            sourcePlane.width,
+                            sourcePlane.length)
+
+    rotated_plane_x.rotate_plane(do_rotation(45, "x"))
+    rotated_plane_x.translate_plane(np.array([0, 5, 0]))
+    fig = visualise_environment(fig, rotated_plane_x, "green")
 
 
     # Step 3: Generate random points and create lines
@@ -164,9 +208,11 @@ def main():
     fig, hit, miss = evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines)
 
     # Step 5: Display the plot and results
-    fig.show()
     print(f"Total number of hits recorded: {hit}")
     print(f"Total number of misses recorded: {miss}")
+
+    fig.show()
+
 
 if __name__ == "__main__":
     main()
