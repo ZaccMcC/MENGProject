@@ -1,6 +1,5 @@
 import numpy as np
 
-import plotly.graph_objects as go
 
 from plane import compute_local_axes
 
@@ -21,7 +20,7 @@ class Areas:
 
         # Compute initial corners using the local frame
         self.update_corners()
-        print(self.corners)
+        # print(self.corners)
 
     def update_corners(self):
         """

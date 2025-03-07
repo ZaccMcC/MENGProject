@@ -2,8 +2,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 import random
 
-import plotly.graph_objects as go
-
 class Plane:
     """
     A class to represent a 3D plane with plotting and point generation methods.
@@ -57,8 +55,6 @@ class Plane:
             self.position + (-half_width * self.right - half_length * self.up)   # Bottom Left
         ])
 
-
-
     def rotate_plane(self, rotation_matrix):
         """
         Rotates the plane by applying a rotation matrix to its local coordinate system.
@@ -78,6 +74,7 @@ class Plane:
     def translate_plane(self, translation_vector):
         self.position = self.position + translation_vector
         self.corners = self.corners + translation_vector
+        self.update_corners()
 
     def planes_plot_3d(self, fig, colour):
         """
@@ -226,6 +223,8 @@ def compute_local_axes(normal):
     # print(f"Right: {right}")
     # Compute up (cross product of normal and right)
     up = np.cross(normal, right)
+
+    # print(f"World up: {world_up} normal: {normal} and right {right} and up {up}")
 
     return right, up, normal  # Return orthonormal basis
 

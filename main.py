@@ -15,7 +15,7 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
 """
 
     # Define the source plane
-    source_plane_position = np.array([0, 0, 2])
+    source_plane_position = np.array([0, 0, 1])
     source_plane_direction = np.array([0, 0, 1])
     sourcePlane = Plane("Source Plane", source_plane_position, source_plane_direction, 10, 10)
 
@@ -145,6 +145,19 @@ def evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines):
     return fig, hit, miss
 
 def do_rotation(degrees, axis):
+    """
+    Checks intersections of lines with the sensor plane and evaluates
+    whether they hit the target area.
+    Visualizes hits in green and misses in red.
+
+    Args:
+        degrees: The angle of rotation in degrees (converted to radians later).
+        axis: The axis of rotation.
+
+    Returns:
+        The rotation matrix for the specified axis and angle.
+    """
+
     theta = np.radians(degrees)
     if axis == "x":
         R = np.array([
@@ -172,42 +185,52 @@ def do_rotation(degrees, axis):
 def main():
     """
     Runs the main program
-        initialising objects, visualising,
-    and
-        evaluating line-plane intersections.
+        1. Initialises planes and areas.
+        2. Creates lines from the source plane.
+        3. Sets up a 3D plot and visualises the environment, including planes and areas.
+        4. Applies rotation to the source plane and updates the visualisation.
+        5. Rotates the lines according to the transformed source plane.
+        6. Evaluates intersections between lines and the sensor plane, visualises results, and calculates hit/miss information.
+        7. Displays the final 3D plot and prints the hit/miss results.
     """
+
     # Step 1: Initialize planes and areas
     sensorPlane, sourcePlane, interPlane, sensorArea = initialise_planes_and_areas()
 
-    # Step 2: Create 3D plot and visualize environment
+    # Step 2: Create lines from source plane
+    lines = create_lines_from_random_points(sourcePlane, num_points=60, direction=sourcePlane.direction)
+
+    # Step 3: Create 3D plot and visualize environment
     fig = initialise_3d_plot(sourcePlane)
     fig = visualise_environment(fig, sensorPlane, "red")
     fig = visualise_environment(fig, sourcePlane, "yellow")
     # fig = visualise_environment(fig, interPlane, "green")
     fig = visualise_environment(fig, sensorArea, "#00FF00")
 
-    thetaD = 45
+    # Step 4: Apply translation / rotation to original source plane
+    thetaD = 30
     theta = np.radians(thetaD)
-    # X-axis Rotation
-    rotated_plane_x = Plane(f"Rotated {theta} degrees in x-axis",
+
+    rotationAxis = "x"
+    rotated_plane_x = Plane(f"Rotated {thetaD:.0f}° in {rotationAxis}-axis",
                             sourcePlane.position,
                             sourcePlane.direction,
                             sourcePlane.width,
                             sourcePlane.length)
 
-    rotated_plane_x.rotate_plane(do_rotation(45, "x"))
-    rotated_plane_x.translate_plane(np.array([0, 5, 0]))
+    print(rotated_plane_x.title)
+    rotated_plane_x.rotate_plane(do_rotation(theta, "x"))
+    # rotated_plane_x.translate_plane(np.array([0, 0, 4]))
     fig = visualise_environment(fig, rotated_plane_x, "green")
 
+    # Step 5: Rotate lines
+    for i in lines:
+        i.update_position(rotated_plane_x)
 
-    # Step 3: Generate random points and create lines
-    direction = np.array([0, 0, 1])  # Direction vector for all lines
-    lines = create_lines_from_random_points(sourcePlane, num_points=60, direction=direction)
-
-    # Step 4: Evaluate hits and visualize lines
+    # Step 5: Evaluate hits and visualize lines
     fig, hit, miss = evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines)
 
-    # Step 5: Display the plot and results
+    # Step 6: Display the plot and results
     print(f"Total number of hits recorded: {hit}")
     print(f"Total number of misses recorded: {miss}")
 
@@ -216,3 +239,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
