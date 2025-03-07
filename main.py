@@ -15,23 +15,23 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
 """
 
     # Define the source plane
-    source_plane_position = np.array([0, 0, 1])
-    source_plane_direction = np.array([0, 0, 1])
+    source_plane_position = ([0, 0, 1])
+    source_plane_direction = ([0, 0, 1])
     sourcePlane = Plane("Source Plane", source_plane_position, source_plane_direction, 10, 10)
 
     # Define the sensor plane
-    sensor_plane_position = np.array([0, 0, 0]) # Defines its position (centre point)
-    sensor_plane_direction = np.array([0, 0, 1]) # Defines its direction (facing down)
+    sensor_plane_position = ([0, 0, 0]) # Defines its position (centre point)
+    sensor_plane_direction = ([0, 0, 1]) # Defines its direction (facing down)
     sensorPlane = Plane("Sensor Plane", sensor_plane_position, sensor_plane_direction, 10, 10)
 
     # Define the intermediate plane
-    inter_plane_position = np.array([0, 0, 1])
-    inter_plane_direction = np.array([0, 0, 1])
+    inter_plane_position = ([0, 0, 1])
+    inter_plane_direction = ([0, 0, 1])
     interPlane = Plane("Inter-plane", inter_plane_position, inter_plane_direction, 5, 5)
 
     # Define the sensor area (target area on the sensor plane)
-    sensor_area_position = np.array([4, 3, 0])
-    sensor_area_direction = np.array([0, 0, 1])
+    sensor_area_position = ([4, 3, 0])
+    sensor_area_direction = ([0, 0, 1])
     sensorArea = Areas("Sensor", sensor_area_position, sensor_area_direction, 2, 2)
 
     return sensorPlane, sourcePlane, interPlane, sensorArea
