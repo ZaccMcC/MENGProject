@@ -43,7 +43,7 @@ def initialise_3d_plot(sourcePlane):
 
     Returns: A Plotly figure object.
     """
-    lims = 10
+    lims = 20
     fig = go.Figure()
     fig.update_layout(
         scene=dict(
@@ -109,7 +109,6 @@ def create_lines_from_random_points(sourcePlane, num_points, direction):
         Line((point[0], point[1], sourcePlane.position[2]), direction) for point in randomPoints]
     return lines
 
-
 def evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines):
     """
     Checks intersections of lines with the sensor plane and evaluates
@@ -142,23 +141,24 @@ def evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines):
             fig = line.plot_lines_3d(fig, intersection_coordinates, "red")
             miss += 1
 
+    print(f"Total number of hits recorded: {hit}")
+    print(f"Total number of misses recorded: {miss}")
+
     return fig, hit, miss
 
-def do_rotation(degrees, axis):
+def do_rotation(theta, axis):
     """
-    Checks intersections of lines with the sensor plane and evaluates
-    whether they hit the target area.
-    Visualizes hits in green and misses in red.
+    Gets rotation matrix for specified axis and angle.
 
     Args:
-        degrees: The angle of rotation in degrees (converted to radians later).
+        theta: The angle of rotation in degrees (converted to radians later).
         axis: The axis of rotation.
 
     Returns:
         The rotation matrix for the specified axis and angle.
     """
 
-    theta = np.radians(degrees)
+    # theta = np.radians(degrees)
     if axis == "x":
         R = np.array([
             [1, 0, 0],
@@ -205,38 +205,51 @@ def main():
     fig = visualise_environment(fig, sensorPlane, "red")
     fig = visualise_environment(fig, sourcePlane, "yellow")
     # fig = visualise_environment(fig, interPlane, "green")
-    fig = visualise_environment(fig, sensorArea, "#00FF00")
+    # fig = visualise_environment(fig, sensorArea, "#00FF00")
 
     # Step 4: Apply translation / rotation to original source plane
-    thetaD = 30
-    theta = np.radians(thetaD)
+        # Translation vector for moving source plane
+    translation = np.array([0 ,5 ,0])
+    theta = 90 # Degrees of rotation
+
+    # fig.show()
 
     rotationAxis = "x"
-    rotated_plane_x = Plane(f"Rotated {thetaD:.0f}° in {rotationAxis}-axis",
+    # f"Plane {theta:.0f}° in {rotationAxis}-axis",
+    # Create new plane be rotated / translated source plane
+    new_source_plane = Plane(f"Moving plane",
                             sourcePlane.position,
                             sourcePlane.direction,
                             sourcePlane.width,
                             sourcePlane.length)
 
-    print(rotated_plane_x.title)
-    rotated_plane_x.rotate_plane(do_rotation(theta, "x"))
-    # rotated_plane_x.translate_plane(np.array([0, 0, 4]))
-    fig = visualise_environment(fig, rotated_plane_x, "green")
+    # sourcePlane.print_pose()
+    # new_source_plane.print_pose()
+    # Apply rotation
+    new_source_plane.rotate_plane(do_rotation(np.radians(theta), rotationAxis))
+
+    # Apply translation
+    new_source_plane.translate_plane(translation)
+
+    # Show results
+    new_source_plane.print_pose()
+    new_source_plane.plot_axis(fig)
+
+    # Visualise the new source plane
+    fig = visualise_environment(fig, new_source_plane, "green")
+
 
     # Step 5: Rotate lines
     for i in lines:
-        i.update_position(rotated_plane_x)
+        i.update_position(new_source_plane)
 
     # Step 5: Evaluate hits and visualize lines
     fig, hit, miss = evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines)
 
     # Step 6: Display the plot and results
-    print(f"Total number of hits recorded: {hit}")
-    print(f"Total number of misses recorded: {miss}")
 
     fig.show()
 
-
+    # new_source_plane.print_pose()
 if __name__ == "__main__":
     main()
-

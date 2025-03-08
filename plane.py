@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import random
+import plotly.graph_objects as go  # For 3D visualization
 
 class Plane:
     """
@@ -40,6 +41,7 @@ class Plane:
 
         # Compute initial corners using the local frame
         self.update_corners()
+        # print(f"\n {self.title} Corners after initial definition: {self.corners}")
 
     def update_corners(self):
         """
@@ -55,6 +57,8 @@ class Plane:
             self.position + (-half_width * self.right - half_length * self.up)   # Bottom Left
         ])
 
+        # print(f"\n {self.title} corners: {self.corners}")
+
     def rotate_plane(self, rotation_matrix):
         """
         Rotates the plane by applying a rotation matrix to its local coordinate system.
@@ -62,19 +66,24 @@ class Plane:
         Args:
             rotation_matrix (np.array): 3x3 rotation matrix.
         """
-        # print(f"Rotated --- right: {self.right}, up: {self.up}, normal: {self.normal}")
+
         # Rotate local axes
         self.right = np.dot(rotation_matrix, self.right)
         self.up = np.dot(rotation_matrix, self.up)
         self.direction = np.dot(rotation_matrix, self.direction)
-        # print(f"Rotated --- right: {self.right}, up: {self.up}, normal: {self.normal}")
+
         # Recalculate corners after rotating the local frame
         self.update_corners()
+        # print(f"\n {self.title} Corners after rotation: {self.corners}")
+
+        # Compute local reference frame (right, up, normal)
+        self.right, self.up, self.direction = compute_local_axes(self.direction)
 
     def translate_plane(self, translation_vector):
         self.position = self.position + translation_vector
-        self.corners = self.corners + translation_vector
+        # self.corners = self.corners + translation_vector
         self.update_corners()
+        # print(f"\n {self.title} Corners after translation: {self.corners}")
 
     def planes_plot_3d(self, fig, colour):
         """
@@ -87,7 +96,7 @@ class Plane:
         Returns:
             plotly.graph_objects.Figure: Updated figure object.
         """
-        from plotly import graph_objects as go
+
 
         # Extract corner coordinates
         x, y, z = zip(*self.corners)
@@ -95,10 +104,22 @@ class Plane:
         # Create a surface plot using the four corners
         fig.add_trace(go.Mesh3d(
             x=x, y=y, z=z,
+            i=[0, 0, 0, 1],  # Triangle 1 (0-1-2) and Triangle 2 (0-2-3)
+            j=[1, 2, 3, 2],
+            k=[2, 3, 0, 3],
             color=colour,
             opacity=0.5,
             name=self.title
         ))
+
+        # print(f"Size of x: {len(x)}")
+        # print(f"Size of y: {len(y)}")
+        # print(f"Size of z: {len(z)}")
+
+        # print(self.title)
+        # print(f"x: {x}")
+        # print(f"y: {y}")
+        # print(f"z: {z}")
 
             # Add a dummy trace for the legend
         fig.add_trace(go.Scatter3d(
@@ -119,29 +140,11 @@ class Plane:
                 showlegend=False
             ))
 
-        local_axis = np.array([self.right, self.up, self.direction])
-        local_axis_colours = ['red', 'green', 'blue']
-        local_axis_names = ['Right', 'Up', 'Normal']
-
-        for i in range(3):
-            unit_vector = local_axis[i] / np.linalg.norm(local_axis[i])  # Normalize
-            start = self.position  # Origin of local axes at plane's position
-            end = self.position + unit_vector  # Unit length
-
-            fig.add_trace(go.Scatter3d(
-                x=[start[0], end[0]],
-                y=[start[1], end[1]],
-                z=[start[2], end[2]],
-                mode='lines+markers',
-                line=dict(color=local_axis_colours[i], width=5),
-                marker=dict(size=8, color=local_axis_colours[i], opacity=0.8),
-                name=local_axis_names[i],
-                showlegend=False
-            ))
-
+        # print(f"Plane : {self.title}")
+        # print(f"Translated position: {self.position}")
+        # print(f"Translated corners: {self.corners}")
 
         return fig
-
 
     def plot_area(self):
         """
@@ -162,7 +165,6 @@ class Plane:
             plt.plot(x_positions, y_positions, color='green')  # Plot edge lines
 
         plt.title(f"Area of {self.title}")
-
 
     def random_points(self, quantity):
         """
@@ -193,6 +195,44 @@ class Plane:
             point (list or array): The (x, y) coordinates of the point to plot.
         """
         plt.plot(point[0], point[1], marker='*', color='red')
+
+    def plot_axis(self, fig):
+        local_axis = np.array([self.right, self.up, self.direction])
+        local_axis_colours = ['red', 'green', 'blue']
+        local_axis_names = ['Right', 'Up', 'Normal']
+
+        for i in range(3):
+            unit_vector = local_axis[i] / np.linalg.norm(local_axis[i])  # Normalize
+            start = self.position  # Origin of local axes at plane's position
+            end = self.position + unit_vector  # Unit length
+
+            fig.add_trace(go.Scatter3d(
+                x=[start[0], end[0]],
+                y=[start[1], end[1]],
+                z=[start[2], end[2]],
+                mode='lines+markers',
+                line=dict(color=local_axis_colours[i], width=5),
+                marker=dict(size=8, color=local_axis_colours[i], opacity=0.8),
+                name=local_axis_names[i],
+                showlegend=False
+            ))
+
+        return fig
+
+    def print_pose(self):
+        # Format the numpy arrays properly for printing
+        right_str = ", ".join(f"{x:.2f}" for x in self.right)
+        up_str = ", ".join(f"{x:.2f}" for x in self.up)
+        direction_str = ", ".join(f"{x:.2f}" for x in self.direction)
+
+        position_str = ", ".join(f"{x:.2f}" for x in self.position)
+
+        print(f"{self.title} plane --- \n right: [{right_str}], normal: [{direction_str}], up: [{up_str}] \n position: [{position_str}]")
+
+        corners_str = ", ".join(
+            f"[{', '.join(f'{val:.2f}' for val in corner)}]" for corner in self.corners)
+        print(f"Corners: {corners_str}")
+
 
 def compute_local_axes(normal):
     """
