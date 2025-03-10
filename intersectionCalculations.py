@@ -5,6 +5,7 @@ import numpy as np
 def direction_vectors(array1, array2):
     check_direction = np.multiply(array1, array2)
     check_direction = np.sum(check_direction)
+
     return check_direction
 
 
@@ -38,5 +39,7 @@ def intersection_wrapper(sensorPlane, line1):
 
         return IntersectionCoordinates
     else:
-        #print(nU)
+        # print(nU)
+        print(f"🚨 intersection not possible for nU vector: {nU}")
         exit(1)
+

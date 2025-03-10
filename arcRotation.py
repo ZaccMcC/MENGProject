@@ -23,12 +23,13 @@ def convert_to_cartesian(rho, theta, phi):
 
     return cartesian
 
-def arc_movement(angle):
+def arc_movement_coordinates(angle, radius):
     """
     Takes input angle for arc rotation and returns cartesian coordinates for each position.
 
     :param:
         angle: Increment angle for arc rotation, angle by which plane is rotated around global origin
+        radius: Radius of arc rotation
 
     :returns:
         cartesianCoords (np.array): Contains cartesian coordinates for each position.
@@ -42,11 +43,30 @@ def arc_movement(angle):
 
     thetas = np.arange(0, 360, angle) # Generate values for theta at each increment
     for idx, i in enumerate(thetas):
-        polar = [5, np.radians(i), np.radians(90)] # Each position around the arc rotation, has coordinate defined in polar form
+        polar = [radius, np.radians(i), np.radians(90)] # Each position around the arc rotation, has coordinate defined in polar form
 
         # Store polar coords
         polarCoords.append(polar)
         # Convert polar form to cartesian form
-        cartesianCoords.append(convert_to_cartesian(polar[0],polar[1],polar[2]))
+        cartesian = convert_to_cartesian(polar[0],polar[1],polar[2])
+        cartesianCoords.append(cartesian)
+
+        cartesian_str = f"Position {idx}: X: {cartesian[0]:.2f}, Y: {cartesian[1]:.2f}, Z: {cartesian[2]:.2f}"
+        print(cartesian_str)
+
+
 
     return cartesianCoords, polarCoords
+
+def arc_movement_vector(plane_object, coords):
+    """
+    Gets current position of plane and calculates new position after rotation.
+    :arg plane_object
+        coords (np.array): Contains cartesian coordinates for next position.
+    :return: translationVector (np.array): Contains vector from current position to new position.
+    """
+    # translationVector = plane_object.position - coords # Incorrect
+    translationVector = coords - plane_object.position
+
+    return translationVector
+

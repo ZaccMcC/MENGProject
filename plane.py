@@ -57,8 +57,6 @@ class Plane:
             self.position + (-half_width * self.right - half_length * self.up)   # Bottom Left
         ])
 
-        # print(f"\n {self.title} corners: {self.corners}")
-
     def rotate_plane(self, rotation_matrix):
         """
         Rotates the plane by applying a rotation matrix to its local coordinate system.
@@ -77,11 +75,11 @@ class Plane:
         # print(f"\n {self.title} Corners after rotation: {self.corners}")
 
         # Compute local reference frame (right, up, normal)
-        self.right, self.up, self.direction = compute_local_axes(self.direction)
+        # self.right, self.up, self.direction = compute_local_axes(self.direction)
 
     def translate_plane(self, translation_vector):
         self.position = self.position + translation_vector
-        # self.corners = self.corners + translation_vector
+
         self.update_corners()
         # print(f"\n {self.title} Corners after translation: {self.corners}")
 
@@ -96,8 +94,6 @@ class Plane:
         Returns:
             plotly.graph_objects.Figure: Updated figure object.
         """
-
-
         # Extract corner coordinates
         x, y, z = zip(*self.corners)
 
@@ -111,15 +107,6 @@ class Plane:
             opacity=0.5,
             name=self.title
         ))
-
-        # print(f"Size of x: {len(x)}")
-        # print(f"Size of y: {len(y)}")
-        # print(f"Size of z: {len(z)}")
-
-        # print(self.title)
-        # print(f"x: {x}")
-        # print(f"y: {y}")
-        # print(f"z: {z}")
 
             # Add a dummy trace for the legend
         fig.add_trace(go.Scatter3d(
@@ -227,11 +214,11 @@ class Plane:
 
         position_str = ", ".join(f"{x:.2f}" for x in self.position)
 
-        print(f"{self.title} plane --- \n right: [{right_str}], normal: [{direction_str}], up: [{up_str}] \n position: [{position_str}]")
+        print(f"\n{self.title} --- \n  position: [{position_str}]\n\n  right: [{right_str}]\n  normal: [{direction_str}]\n  up: [{up_str}]\n")
 
-        corners_str = ", ".join(
-            f"[{', '.join(f'{val:.2f}' for val in corner)}]" for corner in self.corners)
-        print(f"Corners: {corners_str}")
+        # corners_str = ", ".join(
+        #     f"[{', '.join(f'{val:.2f}' for val in corner)}]" for corner in self.corners)
+        # print(f"Corners: {corners_str}")
 
 
 def compute_local_axes(normal):
@@ -264,7 +251,10 @@ def compute_local_axes(normal):
     # Compute up (cross product of normal and right)
     up = np.cross(normal, right)
 
+
+
     # print(f"World up: {world_up} normal: {normal} and right {right} and up {up}")
 
     return right, up, normal  # Return orthonormal basis
+    # return up, right, normal  # Return orthonormal basis
 

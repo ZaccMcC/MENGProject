@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from arcRotation import convert_to_cartesian, arc_movement
+from arcRotation import convert_to_cartesian, arc_movement_coordinates
 from main import initialise_planes_and_areas, create_lines_from_random_points, initialise_3d_plot, \
     visualise_environment, do_rotation
 from plane import Plane
@@ -72,7 +72,7 @@ def prepareFigure():
     ax.set_zlabel("Z-axis")
     ax.set_title("3D Plot of Spherical Coordinates")
 
-    return ax
+    return fig, ax
 
 
 def main_movement_test():
@@ -115,10 +115,10 @@ def main_movement_test():
     new_source_plane.print_pose()
 
 
-    ax = prepareFigure()
+    fig, ax = prepareFigure()
 
     # Get coordinates for P at each new position
-    cartesianCoords, polarCoords = arc_movement(30)
+    cartesianCoords, polarCoords = arc_movement_coordinates(30, 9)
 
     # Update Matlib 2D plot of positions
     plot_spherical_coordinates(ax, polarCoords)
@@ -126,8 +126,9 @@ def main_movement_test():
 
 
     # Show plot
-    # plt.show()
+    plt.show()
     fig.show()
 
 # convert_to_polar(0,-1,0)
 # main_movement_test()
+

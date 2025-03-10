@@ -1,3 +1,4 @@
+from arcRotation import arc_movement_coordinates, arc_movement_vector
 from intersectionCalculations import intersection_wrapper  # Import for calculating line-plane intersection
 from line import Line  # Import for Line object
 from plane import Plane, compute_local_axes  # Import for Plane object
@@ -16,7 +17,7 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
 
     # Define the source plane
     source_plane_position = ([0, 0, 1])
-    source_plane_direction = ([0, 0, 1])
+    source_plane_direction = ([0, 0, -1])
     sourcePlane = Plane("Source Plane", source_plane_position, source_plane_direction, 10, 10)
 
     # Define the sensor plane
@@ -182,6 +183,9 @@ def do_rotation(theta, axis):
         R = np.array([1,1,1])
     return R
 
+# def incremental_movements():
+
+
 def main():
     """
     Runs the main program
@@ -208,47 +212,77 @@ def main():
     # fig = visualise_environment(fig, sensorArea, "#00FF00")
 
     # Step 4: Apply translation / rotation to original source plane
-        # Translation vector for moving source plane
-    translation = np.array([0 ,5 ,0])
+    radius = 9 # Starting position for arc movement
     theta = 90 # Degrees of rotation
 
-    # fig.show()
+    translation = np.array([radius, 0 ,-1]) # Translation vector -> arc starting position
+    rotationAxis = "y" # Specify axis of rotation
 
-    rotationAxis = "x"
-    # f"Plane {theta:.0f}° in {rotationAxis}-axis",
-    # Create new plane be rotated / translated source plane
-    new_source_plane = Plane(f"Moving plane",
+    # Create copy of course plane
+    #
+    new_source_plane = Plane(f"Copy of source",
                             sourcePlane.position,
                             sourcePlane.direction,
                             sourcePlane.width,
                             sourcePlane.length)
 
-    # sourcePlane.print_pose()
-    # new_source_plane.print_pose()
+    # Before movement from initial position to arc starting position
+    new_source_plane.print_pose()
+
     # Apply rotation
     new_source_plane.rotate_plane(do_rotation(np.radians(theta), rotationAxis))
+    new_source_plane.title = f"Plane rotated {theta:.0f}° in {rotationAxis}-axis"
+    new_source_plane.print_pose()
 
     # Apply translation
     new_source_plane.translate_plane(translation)
-
-    # Show results
+    new_source_plane.title = f"Plane translated by [{translation[0]:.2f}, {translation[1]:.2f},{translation[2]:.2f}]"
     new_source_plane.print_pose()
-    new_source_plane.plot_axis(fig)
+
+    # Starting position achieved
+
 
     # Visualise the new source plane
+    fig = visualise_environment(fig, new_source_plane, "blue")
+
+    # Move to first arc position
+    arc_angle = 90 # Degrees of rotation around arc
+
+    # Get coordinates of steps in arc
+    nextPositions, _ = arc_movement_coordinates(arc_angle, radius)
+
+    # Get vector required to move plane between current position and
+    newVector = arc_movement_vector(new_source_plane, nextPositions[1])
+    print(f"New vector: {newVector}")
+    new_source_plane.plot_axis(fig)
+    sourcePlane.plot_axis(fig)
+
+    # Apply rotation
+    new_source_plane.rotate_plane(do_rotation(np.radians(arc_angle), "z"))
+
+    # Apply translation
+    new_source_plane.translate_plane(newVector)
+    new_source_plane.title = f"Plane translated by [{newVector[0]:.2f}, {newVector[1]:.2f},{newVector[2]:.2f}]"
+    new_source_plane.print_pose()
+
+    # # Visualise the new source plane
     fig = visualise_environment(fig, new_source_plane, "green")
+    new_source_plane.plot_axis(fig)
 
-
-    # Step 5: Rotate lines
-    for i in lines:
-        i.update_position(new_source_plane)
+    # # Step 5: Rotate lines
+    # for i in lines:
+    #     i.update_position(new_source_plane)
 
     # Step 5: Evaluate hits and visualize lines
-    fig, hit, miss = evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines)
+    # fig, hit, miss = evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines)
 
     # Step 6: Display the plot and results
-
-    fig.show()
+    try:
+        fig.show()
+        print("\n   🚨    \n")
+    except Exception as e:
+        print(f"Plotly Error: {e}")
+        exit(1)
 
     # new_source_plane.print_pose()
 if __name__ == "__main__":
