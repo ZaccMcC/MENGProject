@@ -37,7 +37,7 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
 
     return sensorPlane, sourcePlane, interPlane, sensorArea
 
-def initialise_3d_plot(sourcePlane):
+def initialise_3d_plot(sensorPlane):
     """
     Initialises a 3D plot using Plotly.
     Generates a global axis for the plot.
@@ -60,9 +60,11 @@ def initialise_3d_plot(sourcePlane):
 
     )
 
-    global_axis = compute_local_axes(sourcePlane.direction)
+
+    global_axis = [sensorPlane.right, sensorPlane.up, sensorPlane.direction]
+
     axis_colours = ['red', 'green', 'blue']
-    axis_names = ['Right', 'Up', 'Normal']
+    axis_names = ['Right (x)', 'Up (y)', 'Normal (z)']
 
     for i in range(3):
         unit_vector = global_axis[i] / np.linalg.norm(global_axis[i])  # Normalize
@@ -205,11 +207,16 @@ def main():
     lines = create_lines_from_random_points(sourcePlane, num_points=60, direction=sourcePlane.direction)
 
     # Step 3: Create 3D plot and visualize environment
-    fig = initialise_3d_plot(sourcePlane)
+    fig = initialise_3d_plot(sensorPlane)
     fig = visualise_environment(fig, sensorPlane, "red")
     fig = visualise_environment(fig, sourcePlane, "yellow")
     # fig = visualise_environment(fig, interPlane, "green")
     # fig = visualise_environment(fig, sensorArea, "#00FF00")
+
+    sensorPlane.title = "Parent axis"
+    sensorPlane.print_pose()
+
+    sourcePlane.plot_axis(fig)
 
     # Step 4: Apply translation / rotation to original source plane
     radius = 9 # Starting position for arc movement
@@ -219,59 +226,103 @@ def main():
     rotationAxis = "y" # Specify axis of rotation
 
     # Create copy of course plane
-    #
-    new_source_plane = Plane(f"Copy of source",
+    start_pose_plane = Plane(f"Copy of source",
                             sourcePlane.position,
                             sourcePlane.direction,
                             sourcePlane.width,
                             sourcePlane.length)
 
     # Before movement from initial position to arc starting position
-    new_source_plane.print_pose()
+    start_pose_plane.print_pose()
 
     # Apply rotation
-    new_source_plane.rotate_plane(do_rotation(np.radians(theta), rotationAxis))
-    new_source_plane.title = f"Plane rotated {theta:.0f}° in {rotationAxis}-axis"
-    new_source_plane.print_pose()
+    start_pose_plane.rotate_plane(do_rotation(np.radians(theta), rotationAxis))
+    start_pose_plane.title = f"Plane rotated {theta:.0f}° in {rotationAxis}-axis"
+    start_pose_plane.print_pose()
 
     # Apply translation
-    new_source_plane.translate_plane(translation)
-    new_source_plane.title = f"Plane translated by [{translation[0]:.2f}, {translation[1]:.2f},{translation[2]:.2f}]"
-    new_source_plane.print_pose()
+    start_pose_plane.translate_plane(translation)
+    start_pose_plane.title = f"Plane translated by [{translation[0]:.2f}, {translation[1]:.2f},{translation[2]:.2f}]"
+
 
     # Starting position achieved
-
-
     # Visualise the new source plane
-    fig = visualise_environment(fig, new_source_plane, "blue")
+    fig = visualise_environment(fig, start_pose_plane, "blue")
 
     # Move to first arc position
     arc_angle = 90 # Degrees of rotation around arc
 
     # Get coordinates of steps in arc
-    nextPositions, _ = arc_movement_coordinates(arc_angle, radius)
-
-    # Get vector required to move plane between current position and
-    newVector = arc_movement_vector(new_source_plane, nextPositions[1])
-    print(f"New vector: {newVector}")
-    new_source_plane.plot_axis(fig)
-    sourcePlane.plot_axis(fig)
-
-    # Apply rotation
-    new_source_plane.rotate_plane(do_rotation(np.radians(arc_angle), "z"))
-
-    # Apply translation
-    new_source_plane.translate_plane(newVector)
-    new_source_plane.title = f"Plane translated by [{newVector[0]:.2f}, {newVector[1]:.2f},{newVector[2]:.2f}]"
-    new_source_plane.print_pose()
+    allPositions, allPositions_polar = arc_movement_coordinates(arc_angle, radius)
+    start_pose_plane.print_pose()
 
     # # Visualise the new source plane
-    fig = visualise_environment(fig, new_source_plane, "green")
-    new_source_plane.plot_axis(fig)
+    fig = visualise_environment(fig, start_pose_plane, "green")
+    start_pose_plane.plot_axis(fig)
+
+    rotated_planes = []
+
+    # Loop through positions around the arc
+    for idx, positions in enumerate(allPositions):
+        # Create copies of the plane for each new position around the arc
+        if idx == 0: # If plane is in 'start' position of the arc
+                    rotated_planes.append(Plane(f"Plane in position {idx} of arc movement",
+                                                start_pose_plane.position,
+                                                start_pose_plane.direction,
+                                                start_pose_plane.width,
+                                                start_pose_plane.length))
+                    print("Starting position")
+                    fig = visualise_environment(fig, start_pose_plane, "green")
+                    start_pose_plane.plot_axis(fig)
+                    continue
+
+        else:   # If plane has already started arc
+                    rotated_planes.append(Plane(f"Plane in position {idx} of arc movement",
+                                                rotated_planes[idx-1].position,
+                                                rotated_planes[idx-1].direction,
+                                                rotated_planes[idx-1].width,
+                                                rotated_planes[idx-1].length))
+
+        currentPosition = rotated_planes[idx].position
+        nextPosition = positions
+        print(f"Beginning of arc movement {idx} \n")
+        print(f"Plane current position: [{currentPosition[0]:.2f},{currentPosition[1]:.2f},{currentPosition[2]:.2f}]"
+              f"\nNext arc position: [{nextPosition[0]:.2f},{nextPosition[1]:.2f},{nextPosition[2]:.2f}]")
+
+        # Get vector required to move plane between current position
+        newVector = arc_movement_vector(rotated_planes[idx], positions)
+
+        print(f"Required translation vector: [{newVector[0]:.2f},{newVector[1]:.2f},{newVector[2]:.2f} \n \n]")
+
+        # Create copies of the global axis onto which rotation is applied
+        temp_right, temp_up, temp_normal = sensorPlane.right, sensorPlane.up, sensorPlane.direction
+        global_axis = [temp_right, temp_up, temp_normal]
+
+        # Apply the rotation to the global reference frame
+        rotation_matrix = do_rotation(np.radians(arc_angle), "z")
+        temp_right = np.dot(rotation_matrix, temp_right)
+        temp_up = np.dot(rotation_matrix, temp_up)
+        temp_normal = np.dot(rotation_matrix, temp_normal)
+
+
+
+        # Apply rotation
+        print(f"Rotating {arc_angle}° about z-axis \n")
+        rotated_planes[idx].rotate_plane(do_rotation(np.radians(arc_angle), "z"))
+
+
+        # Apply translation
+        rotated_planes[idx].translate_plane(newVector)
+
+        # Plot results
+        fig = visualise_environment(fig, rotated_planes[idx], "blue")
+        rotated_planes[idx].print_pose()
+        rotated_planes[idx].plot_axis(fig)
+
 
     # # Step 5: Rotate lines
     # for i in lines:
-    #     i.update_position(new_source_plane)
+    #     i.update_position(start_pose_plane)
 
     # Step 5: Evaluate hits and visualize lines
     # fig, hit, miss = evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines)
@@ -284,6 +335,6 @@ def main():
         print(f"Plotly Error: {e}")
         exit(1)
 
-    # new_source_plane.print_pose()
+    # start_pose_plane.print_pose()
 if __name__ == "__main__":
     main()

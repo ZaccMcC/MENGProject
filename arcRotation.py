@@ -54,8 +54,6 @@ def arc_movement_coordinates(angle, radius):
         cartesian_str = f"Position {idx}: X: {cartesian[0]:.2f}, Y: {cartesian[1]:.2f}, Z: {cartesian[2]:.2f}"
         print(cartesian_str)
 
-
-
     return cartesianCoords, polarCoords
 
 def arc_movement_vector(plane_object, coords):

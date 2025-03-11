@@ -1,19 +1,19 @@
 from intersectionCalculations import intersection_wrapper  # Import for calculating line-plane intersection
 from line import Line  # Import for Line object
-from main import initialise_planes_and_areas, initialise_3d_plot, visualise_environment
+from main import initialise_planes_and_areas, initialise_3d_plot, visualise_environment, do_rotation
 from plane import Plane  # Import for Plane object
 from areas import Areas  # Import for target areas
 import numpy as np  # For mathematical operations
 import plotly.graph_objects as go  # For 3D visualization
 
 
-# Step 1: Initialize planes and areas
-sensorPlane, sourcePlane, interPlane, sensorArea = initialise_planes_and_areas()
-
-# Step 2: Create 3D plot and visualize environment
-fig = initialise_3d_plot(sourcePlane)
-fig = visualise_environment(fig, sourcePlane, "yellow")
-
+# # Step 1: Initialize planes and areas
+# sensorPlane, sourcePlane, interPlane, sensorArea = initialise_planes_and_areas()
+#
+# # Step 2: Create 3D plot and visualize environment
+# fig = initialise_3d_plot(sourcePlane)
+# fig = visualise_environment(fig, sourcePlane, "yellow")
+#
 # thetaD = 45
 # theta = np.radians(thetaD)
 #
@@ -78,3 +78,7 @@ fig = visualise_environment(fig, sourcePlane, "yellow")
 #                                 sourcePlane.length)
 # translated_plane.translate_plane(np.array([0, 5, 0]))
 # translated_plane.rotate_plane(do_rotation(thetaD, "z"))
+n = np.array([-1, 0, 0])
+
+
+do_rotation(90, "z")

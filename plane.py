@@ -77,6 +77,10 @@ class Plane:
         # Compute local reference frame (right, up, normal)
         # self.right, self.up, self.direction = compute_local_axes(self.direction)
 
+        # Verify consistency
+        assert np.isclose(np.dot(self.up, self.right), 0), "Up and right are not orthogonal"
+        assert np.isclose(np.linalg.norm(self.direction), 1), "Direction vector is not normalized"
+
     def translate_plane(self, translation_vector):
         self.position = self.position + translation_vector
 
@@ -185,8 +189,11 @@ class Plane:
 
     def plot_axis(self, fig):
         local_axis = np.array([self.right, self.up, self.direction])
+
         local_axis_colours = ['red', 'green', 'blue']
-        local_axis_names = ['Right', 'Up', 'Normal']
+        local_axis_names = ['Right (x)', 'Up (y)', 'Normal (z)']
+
+
 
         for i in range(3):
             unit_vector = local_axis[i] / np.linalg.norm(local_axis[i])  # Normalize
@@ -214,7 +221,7 @@ class Plane:
 
         position_str = ", ".join(f"{x:.2f}" for x in self.position)
 
-        print(f"\n{self.title} --- \n  position: [{position_str}]\n\n  right: [{right_str}]\n  normal: [{direction_str}]\n  up: [{up_str}]\n")
+        print(f"{self.title} --- \n  position: [{position_str}]\n\n  right(red) (x): [{right_str}]\n  up(green) (y): [{up_str}]\n  normal(blue) (z): [{direction_str}]\n")
 
         # corners_str = ", ".join(
         #     f"[{', '.join(f'{val:.2f}' for val in corner)}]" for corner in self.corners)
@@ -235,26 +242,23 @@ def compute_local_axes(normal):
     """
     normal = normal / np.linalg.norm(normal)  # Ensure it's a unit vector
 
-    # Choose an arbitrary world up vector (shouldn't be parallel to normal)
+    # Defines the parent / world up vector (y)
     world_up = np.array([0, 1, 0])
 
     # If normal is parallel to world_up, use a different reference
-    if np.allclose(normal, world_up):
-        world_up = np.array([1, 0, 0])
+    if np.abs(np.dot(normal, world_up)) > 0.99:  # Nearly parallel case
+        world_up = np.array([1, 0, 0])  # Switch to an alternative reference
 
-    # Compute right (cross product of world_up and normal)
-    # print(f"World up: {world_up} dot normal: {(normal)}")
+    # Compute right vector (cross product of world_up and normal)
     right = np.cross(world_up, normal)
-    # print(f"Right: {right}")
-    right = right / np.linalg.norm(right)  # Normalize
-    # print(f"Right: {right}")
-    # Compute up (cross product of normal and right)
+    right /= np.linalg.norm(right)  # Normalize to ensure unit length
+
+    # Compute up vector (cross product of normal and right)
     up = np.cross(normal, right)
 
+    # Ensure normalization
+    up /= np.linalg.norm(up)
 
-
-    # print(f"World up: {world_up} normal: {normal} and right {right} and up {up}")
-
+    # print(f"Right: {right} Up: {up} Normal: {normal}")
     return right, up, normal  # Return orthonormal basis
-    # return up, right, normal  # Return orthonormal basis
 
