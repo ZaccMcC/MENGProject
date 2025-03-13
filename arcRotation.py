@@ -54,7 +54,7 @@ def arc_movement_coordinates(radius, theta_angle, phi_angle=90):
         cartesianCoords.append(cartesian)
 
         cartesian_str = f"Position {idx}: X: {cartesian[0]:.2f}, Y: {cartesian[1]:.2f}, Z: {cartesian[2]:.2f}"
-        print(f"{cartesian_str}")
+        # print(f"{cartesian_str}")
 
     print("")
 
