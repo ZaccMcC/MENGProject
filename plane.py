@@ -76,10 +76,11 @@ class Plane:
 
         # Compute local reference frame (right, up, normal)
         # self.right, self.up, self.direction = compute_local_axes(self.direction)
-
         # Verify consistency
-        assert np.isclose(np.dot(self.up, self.right), 0), "Up and right are not orthogonal"
-        assert np.isclose(np.linalg.norm(self.direction), 1), "Direction vector is not normalized"
+        computed_normal = np.cross(self.right, self.up)
+        if not np.allclose(computed_normal, self.direction, atol=1e-6):
+            raise ValueError(
+                f"Right-Hand Rule Violated after rotation! Computed normal {computed_normal} does not match expected normal {self.direction}")
 
     def translate_plane(self, translation_vector):
         self.position = self.position + translation_vector
@@ -258,6 +259,10 @@ def compute_local_axes(normal):
 
     # Ensure normalization
     up /= np.linalg.norm(up)
+
+    computed_normal = np.cross(right, up)
+    if not np.allclose(computed_normal, normal, atol=1e-6):
+        raise ValueError(f"Right-Hand Rule Violated! Computed normal {computed_normal} does not match expected normal {normal}")
 
     # print(f"Right: {right} Up: {up} Normal: {normal}")
     return right, up, normal  # Return orthonormal basis

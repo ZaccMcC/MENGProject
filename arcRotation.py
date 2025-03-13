@@ -52,7 +52,9 @@ def arc_movement_coordinates(angle, radius):
         cartesianCoords.append(cartesian)
 
         cartesian_str = f"Position {idx}: X: {cartesian[0]:.2f}, Y: {cartesian[1]:.2f}, Z: {cartesian[2]:.2f}"
-        print(cartesian_str)
+        print(f"{cartesian_str}")
+
+    print("")
 
     return cartesianCoords, polarCoords
 
