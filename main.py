@@ -336,7 +336,7 @@ def main():
     arc_angle = 90  # Degrees of rotation
 
     # -- Phase 2: Compute arc steps -- #
-    all_positions, allPositions_polar = arc_movement_coordinates(arc_angle, radius)
+    all_positions, allPositions_polar = arc_movement_coordinates(radius, arc_angle)
 
     # Move to first arc position
     start_pose_plane = setup_initial_pose(sourcePlane, theta, rotation_axis, all_positions)

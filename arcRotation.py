@@ -23,12 +23,13 @@ def convert_to_cartesian(rho, theta, phi):
 
     return cartesian
 
-def arc_movement_coordinates(angle, radius):
+
+def arc_movement_coordinates(radius, theta_angle, phi_angle=90):
     """
     Takes input angle for arc rotation and returns cartesian coordinates for each position.
 
     :param:
-        angle: Increment angle for arc rotation, angle by which plane is rotated around global origin
+        theta_angle: Increment angle for arc rotation, angle by which plane is rotated around global origin
         radius: Radius of arc rotation
 
     :returns:
@@ -41,14 +42,15 @@ def arc_movement_coordinates(angle, radius):
 
     # Calculate the positions around the xy axis for arc rotation
 
-    thetas = np.arange(0, 360, angle) # Generate values for theta at each increment
+    thetas = np.arange(0, 360, theta_angle)  # Generate values for theta at each increment
     for idx, i in enumerate(thetas):
-        polar = [radius, np.radians(i), np.radians(90)] # Each position around the arc rotation, has coordinate defined in polar form
+        polar = [radius, np.radians(i),
+                 np.radians(phi_angle)]  # Each position around the arc rotation, has coordinate defined in polar form
 
         # Store polar coords
         polarCoords.append(polar)
         # Convert polar form to cartesian form
-        cartesian = convert_to_cartesian(polar[0],polar[1],polar[2])
+        cartesian = convert_to_cartesian(polar[0], polar[1], polar[2])
         cartesianCoords.append(cartesian)
 
         cartesian_str = f"Position {idx}: X: {cartesian[0]:.2f}, Y: {cartesian[1]:.2f}, Z: {cartesian[2]:.2f}"
@@ -57,6 +59,7 @@ def arc_movement_coordinates(angle, radius):
     print("")
 
     return cartesianCoords, polarCoords
+
 
 def arc_movement_vector(plane_object, coords):
     """
@@ -69,4 +72,3 @@ def arc_movement_vector(plane_object, coords):
     translationVector = coords - plane_object.position
 
     return translationVector
-
