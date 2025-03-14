@@ -1,4 +1,4 @@
-from arcRotation import arc_movement_coordinates, arc_movement_vector
+from arcRotation import arc_movement_coordinates, arc_movement_vector, rotation_rings
 from intersectionCalculations import intersection_wrapper  # Import for calculating line-plane intersection
 from line import Line  # Import for Line object
 from plane import Plane, compute_local_axes  # Import for Plane object
@@ -6,8 +6,9 @@ from areas import Areas  # Import for target areas
 import numpy as np  # For mathematical operations
 import plotly.graph_objects as go  # For 3D visualization
 
-import logging
+from memory_profiler import profile
 
+import logging
 
 # from rotationTest import sourcePlane
 
@@ -21,7 +22,7 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
     # Define the source plane
     source_plane_position = ([0, 0, 1])
     source_plane_direction = ([0, 0, -1])
-    sourcePlane = Plane("Source Plane", source_plane_position, source_plane_direction, 10, 10)
+    sourcePlane = Plane("Source Plane", source_plane_position, source_plane_direction, 4, 4)
 
     # Define the sensor plane
     sensor_plane_position = ([0, 0, 0])  # Defines its position (centre point)
@@ -235,8 +236,8 @@ def setup_initial_pose(source_plane, theta, rotation_axis, all_positions):
 
     return start_pose_plane
 
-
-def move_plane_along_arc(fig, plane, all_positions, arc_angle, rotation_axis):
+# @profile
+def move_plane_along_arc(fig, plane, all_positions, arc_angle, rotation_axis, polar_positions):
     """
     Moves the plane along a predefined arc by applying rotation and translation at each step.
     Uses logging for debugging
@@ -253,8 +254,12 @@ def move_plane_along_arc(fig, plane, all_positions, arc_angle, rotation_axis):
 
     rotated_planes = []
 
+    initial_phi = polar_positions[0][2]
+
+    # Create copy of plane then apply movement
     for idx, positions in enumerate(all_positions):
         # Create copies of the plane for each new position around the arc
+        # Copy source plane, if first movement
         if idx == 0:  # If plane is in 'start' position of the arc
             rotated_planes.append(Plane(f"Plane in position {idx} of arc movement",
                                         plane.position,
@@ -265,7 +270,7 @@ def move_plane_along_arc(fig, plane, all_positions, arc_angle, rotation_axis):
             fig = visualise_environment(fig, rotated_planes[idx], "green")
             plane.plot_axis(fig)
             continue
-
+        # Copy last plane, if movement began already
         else:  # If plane has already started arc
             rotated_planes.append(Plane(f"Plane in position {idx} of arc movement",
                                         rotated_planes[idx - 1].position,
@@ -273,6 +278,7 @@ def move_plane_along_arc(fig, plane, all_positions, arc_angle, rotation_axis):
                                         rotated_planes[idx - 1].width,
                                         rotated_planes[idx - 1].length))
 
+        # Update position from parameters
         currentPosition = rotated_planes[idx].position
         nextPosition = positions
 
@@ -284,9 +290,16 @@ def move_plane_along_arc(fig, plane, all_positions, arc_angle, rotation_axis):
         new_vector = arc_movement_vector(rotated_planes[idx], positions)
         logging.debug(f"Translation vector: [{new_vector[0]:.2f}, {new_vector[1]:.2f}, {new_vector[2]:.2f}]")
 
-        # Apply rotation
+        # Apply rotation to align with the origin in the z axis
         logging.info(f"Rotating {arc_angle}° around {rotation_axis}-axis")
         rotated_planes[idx].rotate_plane(do_rotation(np.radians(arc_angle), "z"))
+
+        # Apply rotation to align with the new phi position.
+        if polar_positions[idx][2] != initial_phi:
+            desired_angle = initial_phi - polar_positions[idx][2]
+            print(f"Rotation desired by {np.degrees(desired_angle)}")
+            initial_phi = polar_positions[idx][2]
+            rotated_planes[idx].rotate_plane(do_rotation(-desired_angle, "y"))
 
         # Apply translation
         rotated_planes[idx].translate_plane(new_vector)
@@ -299,6 +312,7 @@ def move_plane_along_arc(fig, plane, all_positions, arc_angle, rotation_axis):
     return rotated_planes, fig
 
 
+@profile(stream=open("memory_profile.log", "w"))
 def main():
     """
     Runs the main program
@@ -330,19 +344,27 @@ def main():
 
     #        ----- Step 4: Arc movements -----        #
     # -- Phase 1: Initialise arc parameters -- #
-    radius = 9  # Radius position for arc movement
+    # Defines the initial movement
     theta = 90  # Degrees of rotation for normal vector correction
     rotation_axis = "y"  # Rotate y-axis for correct normal vector at arc starting
-    arc_angle = 90  # Degrees of rotation
 
     # -- Phase 2: Compute arc steps -- #
-    all_positions, allPositions_polar = arc_movement_coordinates(radius, arc_angle)
+
+    radius = 9  # Radius position for arc movement
+    arc_theta_angle = 60  # Defines the theta steps taken around the arc
+    arc_phi_angle = np.arange(90, -30, -30)  # Generate values for theta at each increment
+
+    # Gets all position P vectors for the plane as it rotates around arc
+    # Increments first through arc_theta_angles, then phis
+    all_positions, all_positions_polar = rotation_rings(arc_phi_angle, radius, arc_theta_angle)
+
+    # all_positions, allPositions_polar = arc_movement_coordinates(radius, arc_theta_angle)
 
     # Move to first arc position
     start_pose_plane = setup_initial_pose(sourcePlane, theta, rotation_axis, all_positions)
 
     # -- Phase 3: Move the plane along the arc -- #
-    new_planes, _ = move_plane_along_arc(fig, start_pose_plane, all_positions, arc_angle, rotation_axis)
+    new_planes, _ = move_plane_along_arc(fig, start_pose_plane, all_positions, arc_theta_angle, rotation_axis, all_positions_polar)
 
     #        ----- Step 5: Rotate lines -----        #
     # for i in lines:
@@ -352,9 +374,10 @@ def main():
     # fig, hit, miss = evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines)
 
     #        ----- Step 7: Display the plot and results -----        #
+
     try:
         fig.show()
-        print("\n   🚨    \n")
+        print("\n   Finished.    \n")
     except Exception as e:
         print(f"Plotly Error: {e}")
         exit(1)

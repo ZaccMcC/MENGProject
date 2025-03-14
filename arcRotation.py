@@ -60,6 +60,25 @@ def arc_movement_coordinates(radius, theta_angle, phi_angle=90):
 
     return cartesianCoords, polarCoords
 
+def rotation_rings(phis, radius, theta_angle):
+
+    all_points = []
+    allPositions_polar = []
+    i = 0
+    for phi_angles in phis:
+        # Returns coordinates around circle
+        list_point, list_points_polar = arc_movement_coordinates(radius, theta_angle, phi_angles)
+        # Extend the all_points list with the new points
+        all_points.extend(list_point)  # list_point is a list of numpy arrays
+        allPositions_polar.extend(list_points_polar)
+
+        i = i + 1
+
+    # Convert the list of arrays
+    all_points = np.array(all_points)
+    allPositions_polar = np.array(allPositions_polar)
+
+    return all_points, allPositions_polar
 
 def arc_movement_vector(plane_object, coords):
     """

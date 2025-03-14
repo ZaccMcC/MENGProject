@@ -31,18 +31,35 @@ def add_hemisphere(radius_circle):
                     edgecolor='none')  # Semi-transparent
 
 
-def plot_cords_mat(point_list, c):
-    for x, y, z in point_list:
-        x = round(x, 2)
-        y = round(y, 2)
-        z = round(z, 2)
-        # print(f"x: {x}, y: {y}, z: {z}")
-        # Scatter plot of the points
-        ax.scatter(x, y, z, c=f"{c}", marker='o')
+def plot_cords_mat(ax, point_list, c, label):
+    """
+    Plots a list of 3D points and ensures they appear in the legend.
+
+    Args:
+        ax: Matplotlib 3D axis object.
+        point_list: List of (x, y, z) coordinates.
+        c: Color of the points.
+        label: Label for legend.
+    """
+    # Plot all points with a single scatter call
+    x_vals = [round(float(x), 2) for x, y, z in point_list]
+    y_vals = [round(float(y), 2) for x, y, z in point_list]
+    z_vals = [round(float(z), 2) for x, y, z in point_list]
+
+    # Combine points into single nested list
+    formatted_points = [[x, y, z] for x, y, z in zip(x_vals, y_vals, z_vals)]
+
+    print(f"Number of points: {len(point_list)}")
+    print(f"Point list: {formatted_points}")
+
+    # Plot points
+    ax.scatter(x_vals, y_vals, z_vals, c=c, marker='o', label=label)
+
+    ax.legend()
 
 
 radius = 9
-arc_angle = 25
+arc_angle = 90
 
 # Create a 3D plot
 fig = plt.figure(figsize=(8, 6))
@@ -61,21 +78,23 @@ i = 0
 for phi_angles in phis:
     # Returns coordinates around circle
     list_point, allPositions_polar = arc_movement_coordinates(radius, arc_angle, phi_angles)
+    print(f"For current phi angle: {phi_angles}")
+
+    arc_radius = radius * np.sin(np.radians(phi_angles))
+    print(f"Arc radius: {round(arc_radius,2)}")
+
     # Add points to ax from cartesian points list
-    plot_cords_mat(list_point, colours[i])
+    plot_cords_mat(ax, list_point, colours[i], f"Level: {i} φ: {phi_angles}")
 
     i = i + 1
 
-# # Returns coordinates around circle
-# list_point, _ = arc_movement_coordinates(radius, arc_angle, 45)
-# # Add points to ax from cartesian points list
-# plot_cords_mat(list_point, "g")
 
 # Labels
 ax.set_xlabel('X Axis')
 ax.set_ylabel('Y Axis')
 ax.set_zlabel('Z Axis')
-ax.set_title('3D Scatter Plot')
+ax.set_title(f"All arc movement plane positions \n (r, θ, φ) = ({radius}, {arc_angle}, φ)")
 
+plt.legend()
 # Show the plot
 plt.show()
