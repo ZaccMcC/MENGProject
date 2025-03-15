@@ -119,20 +119,20 @@ def create_lines_from_plane(source_plane, num_lines):
     return lines
 
 
-def evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines):
+def evaluate_line_results(sensorPlane, sensorArea, lines):
     """
-    Checks intersections of lines with the sensor plane and evaluates
-    whether they hit the target area.
-    Visualizes hits in green and misses in red.
+    Checks intersections of lines with the sensor plane and evaluates whether they hit the target area.
+
+    Updates line object internal parameters with the results.
 
     Args:
-        fig: The 3D Plotly figure for visualization.
         sensorPlane: The plane intersecting with the lines.
         sensorArea: The target area to evaluate hits.
         lines: List of Line objects.
 
     Returns:
-        Updated Plotly figure, number of hits, number of misses.
+        hit: number of hits.
+        miss: number of misses.
     """
     hit = 0
     miss = 0
@@ -145,17 +145,19 @@ def evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines):
         result = sensorArea.record_result(intersection_coordinates)
 
         if result == 1:  # Hit
-            fig = line.plot_lines_3d(fig, intersection_coordinates, "green")
+            line.result = 1
             hit += 1
         elif result == 0:  # Miss
-            fig = line.plot_lines_3d(fig, intersection_coordinates, "red")
+            line.result = 0
             miss += 1
+
+        line.intersection_coordinates = intersection_coordinates
 
 
     print(f"Total number of hits recorded: {hit}")
     print(f"Total number of misses recorded: {miss}")
 
-    return fig, hit, miss
+    return hit, miss
 
 
 def do_rotation(theta, axis):
@@ -394,6 +396,26 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, polar_p
     return rotated_planes
 
 
+def visualise_intersections(fig, lines):
+    """
+    Checks intersection results, and adds to plot to indicate results - hits and misses in green and red.
+
+    Args:
+        fig: The graphic object to update.
+        lines: List of Line objects.
+
+    Returns:
+        Updated Plotly figure
+    """
+    for line in lines:
+        if line.result == 1:  # Hit
+            fig = line.plot_lines_3d(fig, "green")
+        else:  # Miss
+            fig = line.plot_lines_3d(fig, "red")
+
+    return fig
+
+
 @profile(stream=open("memory_profile.log", "w"))
 def main():
     """
@@ -465,7 +487,9 @@ def main():
 
 
     #        ----- Step 6: Evaluate hits and visualize lines -----        #
-    fig, hit, miss = evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines)
+    hit, miss = evaluate_line_results(sensorPlane, sensorArea, lines)
+    visualise_intersections(fig, lines)
+
 
     fig.show()
     exit(2)

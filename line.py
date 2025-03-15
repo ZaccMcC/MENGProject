@@ -16,21 +16,23 @@ class Line:
         self.position = None  # Will be computed in global coordinates
         self.direction = np.array(direction)
 
-    def plot_lines_3d(self, fig, intersection, color):
+        self.intersection_coordinates = None
+        self.result = None
+
+    def plot_lines_3d(self, fig, color):
         """
         Adds the line to the 3D plot.
 
         Args:
             fig (Plotly figure): The figure to plot.
-            intersection (array): The intersection point with the sensor plane.
             color (str): Line color.
 
         Returns:
             fig (Plotly figure): Updated figure.
         """
-        x = [self.position[0], intersection[0]]
-        y = [self.position[1], intersection[1]]
-        z = [self.position[2], intersection[2]]
+        x = [self.position[0], self.intersection_coordinates[0]]
+        y = [self.position[1], self.intersection_coordinates[1]]
+        z = [self.position[2], self.intersection_coordinates[2]]
 
         fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='lines', showlegend=False,
                                    line={'color': color, 'width': 3}))
