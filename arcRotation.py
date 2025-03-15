@@ -87,8 +87,10 @@ def rotation_rings(phis, radius, theta_angle):
 
 def arc_movement_vector(plane_object, coords):
     """
-    Gets current position of plane and calculates new position after rotation.
-    :arg plane_object
+    Gets current position of plane and new position after and calculates the vector between them
+
+    :arg: plane_object
+        plane_object (Plane): Contains position and orientation of plane.
         coords (np.array): Contains cartesian coordinates for next position.
     :return: translationVector (np.array): Contains vector from current position to new position.
     """

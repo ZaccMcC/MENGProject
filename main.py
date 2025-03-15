@@ -93,6 +93,7 @@ def visualise_environment(fig, planeObject, colour):  # sensorPlane, sourcePlane
     fig = planeObject.planes_plot_3d(fig, colour)
     return fig
 
+
 def update_lines_global_positions(lines, new_source_plane):
     """
     Updates the global positions of all lines based on their local positions within new source plane.
@@ -243,9 +244,16 @@ def setup_initial_pose(source_plane, theta, rotation_axis, all_positions):
 
     # Set position to the first computed arc position instead of translating manually
     print(f"Moving to initial arc position: {all_positions[0]}")
-    start_pose_plane.position = np.array(all_positions[0])
+
+    # start_pose_plane.position = np.array(all_positions[0])
+
+    translation_vector = arc_movement_vector(start_pose_plane, all_positions[0])
+    start_pose_plane.translate_plane(translation_vector)
+
+
     start_pose_plane.title = "Plane moved to initial arc position"
     start_pose_plane.print_pose()
+
 
     return start_pose_plane
 
@@ -258,7 +266,6 @@ def generate_arc_animation(fig, rotated_planes, static_traces):
         fig (Plotly Figure): The figure used for visualization.
         rotated_planes (list): The list of planes from move_plane_along_arc().
         static_traces (list): Static objects to keep in the visualization.
-
     Returns:
         fig (Plotly Figure): Updated figure with animation.
     """
@@ -332,7 +339,7 @@ def generate_static_arc_plot(fig, rotated_planes):
 
     for idx, plane in enumerate(rotated_planes):
         if idx == 0:
-            fig = plane.planes_plot_3d(fig, "green")
+            fig = plane.planes_plot_3d(fig, "yellow")
         else:
             fig = plane.planes_plot_3d(fig, "blue")
 
@@ -398,7 +405,7 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, polar_p
             new_plane.rotate_plane(do_rotation(-correction_angle, "y"))
             initial_phi = polar_positions[idx][2]
 
-        # Apply rotation
+        # Apply translation
         new_plane.translate_plane(translation_vector)
         rotated_planes.append(new_plane)
 
@@ -459,7 +466,7 @@ def main():
     sensorPlane.title = "Parent axis"
     sensorPlane.print_pose()
 
-    sourcePlane.plot_axis(fig)
+    # sourcePlane.plot_axis(fig)
 
     sourcePlane.title = "Source plane"
     sourcePlane.print_pose()
@@ -469,7 +476,7 @@ def main():
     # Gets all position P vectors for the plane as it rotates around arc
     # Increments first through arc_theta_angles, then phis
     arc_phi_angle = np.arange(90, -config.arc_movement["arc_phi_step"], -config.arc_movement["arc_phi_step"])
-    arc_phi_angle = [90]
+    # arc_phi_angle = [90]
 
     all_positions, all_positions_polar = rotation_rings(
         arc_phi_angle, # phi levels to the spherical arc
@@ -498,10 +505,18 @@ def main():
     else:
         rotated_planes = [start_pose_plane]
 
+    print(f"Checking lines")
 
-    #        ----- Step 6: Evaluate hits and visualize lines -----        #
-    hit, miss = evaluate_line_results(sensorPlane, sensorArea, lines)
-    visualise_intersections(fig, lines)
+    for plane in rotated_planes: # Check lines for each plane
+        lines = update_lines_global_positions(lines, plane)
+        hit, miss = evaluate_line_results(sensorPlane, sensorArea, lines)
+        visualise_intersections(fig, lines)
+        print(f"Plane {plane.title} has {hit} hits and {miss} misses")
+    #
+    #
+    # #        ----- Step 6: Evaluate hits and visualize lines -----        #
+    # hit, miss = evaluate_line_results(sensorPlane, sensorArea, lines)
+    # visualise_intersections(fig, lines)
 
     #        ----- Step 7: Display the plot and results -----        #
     try:
