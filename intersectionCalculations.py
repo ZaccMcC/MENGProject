@@ -41,5 +41,6 @@ def intersection_wrapper(sensorPlane, line1):
     else:
         # print(nU)
         print(f"🚨 intersection not possible for nU vector: {nU}")
-        exit(1)
+        # exit(1)
+        return None
 

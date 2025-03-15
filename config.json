@@ -1,0 +1,63 @@
+{
+  "planes": {
+    "source_plane": {
+      "position": [0, 0, 1],
+      "direction": [0, 0, -1],
+      "width": 4,
+      "length": 4
+    },
+    "sensor_plane": {
+      "position": [0, 0, 0],
+      "direction": [0, 0, 1],
+      "width": 10,
+      "length": 10
+    },
+    "intermediate_plane": {
+      "position": [0, 0, 1],
+      "direction": [0, 0, 1],
+      "width": 5,
+      "length": 5
+    }
+  },
+  "sensor_area": {
+    "position": [4, 3, 0],
+    "direction": [0, 0, 1],
+    "width": 2,
+    "length": 2
+  },
+  "arc_movement": {
+    "initial_rotation": 90,
+    "rotation_axis": "y",
+    "radius": 9,
+    "arc_theta_angle": 60,
+    "arc_phi_step": 30
+  },
+  "simulation": {
+    "num_lines": 60
+  },
+  "intersection": {
+    "max_distance": 100,
+    "strict_mode": true,
+    "tolerance": 0.01
+  },
+  "visualization": {
+    "show_output_parent": false,
+    "show_sensor_plane": true,
+    "show_source_plane": true,
+    "show_intermediate_plane": false,
+    "color_sensor_plane": "red",
+    "color_source_plane": "yellow",
+    "color_intermediate_plane": "green",
+    "show_axes": true,
+    "animated_plot": false,
+    "frame_rate": 500
+  },
+  "debugging": {
+    "enable_logging": true,
+    "logging_level": "DEBUG"
+  },
+  "performance": {
+    "enable_memory_profiling": true,
+    "optimization_level": "basic"
+  }
+}

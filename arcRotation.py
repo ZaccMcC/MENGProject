@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 
 
@@ -72,11 +74,14 @@ def rotation_rings(phis, radius, theta_angle):
         all_points.extend(list_point)  # list_point is a list of numpy arrays
         allPositions_polar.extend(list_points_polar)
 
+        logging.debug(f"For phi angle {phi_angles}, generated {len(list_point)} points")
         i = i + 1
 
     # Convert the list of arrays
     all_points = np.array(all_points)
     allPositions_polar = np.array(allPositions_polar)
+
+    logging.debug(f"Generated {len(all_points)} points for rotation rings \n")
 
     return all_points, allPositions_polar
 
