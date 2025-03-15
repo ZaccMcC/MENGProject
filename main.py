@@ -93,6 +93,18 @@ def visualise_environment(fig, planeObject, colour):  # sensorPlane, sourcePlane
     fig = planeObject.planes_plot_3d(fig, colour)
     return fig
 
+def update_lines_global_positions(lines, new_source_plane):
+    """
+    Updates the global positions of all lines based on their local positions within new source plane.
+    :return:
+        lines: new list of lines with updated global positions.
+    """
+    # Initialize their global positions based on the plane
+    for line in lines:
+        line.update_global_position(new_source_plane)
+
+    return lines
+
 
 def create_lines_from_plane(source_plane, num_lines):
     """
@@ -112,10 +124,7 @@ def create_lines_from_plane(source_plane, num_lines):
     lines = [Line([x, y, 0], source_plane.direction)
              for x, y in local_positions]
 
-    # Initialize their global positions based on the plane
-    for line in lines:
-        line.update_global_position(source_plane)
-
+    update_lines_global_positions(lines, source_plane)
     return lines
 
 
@@ -455,44 +464,45 @@ def main():
     sourcePlane.title = "Source plane"
     sourcePlane.print_pose()
 
-    # #        ----- Step 4: Arc movements -----        #
-    # # -- Phase 1: Compute arc steps -- #
-    # # Gets all position P vectors for the plane as it rotates around arc
-    # # Increments first through arc_theta_angles, then phis
-    # arc_phi_angle = np.arange(90, -config.arc_movement["arc_phi_step"], -config.arc_movement["arc_phi_step"])
-    #
-    # all_positions, all_positions_polar = rotation_rings(
-    #     arc_phi_angle, # phi levels to the spherical arc
-    #     config.arc_movement["radius"],# Radius of arc movement
-    #     config.arc_movement["arc_theta_angle"] # steps of theta taken around the arc
-    # )
-    #
-    # # -- Phase 2: Move to first arc position -- #
-    # start_pose_plane = setup_initial_pose(
-    #     sourcePlane,
-    #     config.arc_movement["initial_rotation"],
-    #     config.arc_movement["rotation_axis"],
-    #     all_positions
-    # )
-    #
-    # # -- Phase 3: Apply the plane along the arc -- #
-    # # Move plane along arc and update lines
-    # rotated_planes = move_plane_along_arc(
-    #     start_pose_plane,
-    #     all_positions,
-    #     config.arc_movement["arc_theta_angle"],
-    #     "z",
-    #     all_positions_polar,
-    # )
+    #        ----- Step 4: Arc movements -----        #
+    # -- Phase 1: Compute arc steps -- #
+    # Gets all position P vectors for the plane as it rotates around arc
+    # Increments first through arc_theta_angles, then phis
+    arc_phi_angle = np.arange(90, -config.arc_movement["arc_phi_step"], -config.arc_movement["arc_phi_step"])
+    arc_phi_angle = [90]
+
+    all_positions, all_positions_polar = rotation_rings(
+        arc_phi_angle, # phi levels to the spherical arc
+        config.arc_movement["radius"],# Radius of arc movement
+        config.arc_movement["arc_theta_angle"] # steps of theta taken around the arc
+    )
+
+    # -- Phase 2: Move to first arc position -- #
+    start_pose_plane = setup_initial_pose(
+        sourcePlane,
+        config.arc_movement["initial_rotation"],
+        config.arc_movement["rotation_axis"],
+        all_positions
+    )
+
+    # -- Phase 3: Apply the plane along the arc -- #
+    # Move plane along arc and update lines
+    if config.arc_movement["execute_movements"]:
+        rotated_planes = move_plane_along_arc(
+            start_pose_plane,
+            all_positions,
+            config.arc_movement["arc_theta_angle"],
+            "z",
+            all_positions_polar,
+        )
+    else:
+        rotated_planes = [start_pose_plane]
 
 
     #        ----- Step 6: Evaluate hits and visualize lines -----        #
     hit, miss = evaluate_line_results(sensorPlane, sensorArea, lines)
     visualise_intersections(fig, lines)
 
-
-    fig.show()
-    exit(2)
     #        ----- Step 7: Display the plot and results -----        #
     try:
         if config.visualization["show_output_parent"]:

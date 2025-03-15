@@ -26,6 +26,7 @@
     "length": 2
   },
   "arc_movement": {
+    "execute_movements": false,
     "initial_rotation": 90,
     "rotation_axis": "y",
     "radius": 9,
