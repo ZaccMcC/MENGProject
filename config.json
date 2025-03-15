@@ -20,7 +20,7 @@
     }
   },
   "sensor_area": {
-    "position": [4, 3, 0],
+    "position": [2, 2, 0],
     "direction": [0, 0, 1],
     "width": 2,
     "length": 2
@@ -30,7 +30,7 @@
     "rotation_axis": "y",
     "radius": 9,
     "arc_theta_angle": 60,
-    "arc_phi_step": 30
+    "arc_phi_step": 90
   },
   "simulation": {
     "num_lines": 60
@@ -41,13 +41,15 @@
     "tolerance": 0.01
   },
   "visualization": {
-    "show_output_parent": false,
+    "show_output_parent": true,
     "show_sensor_plane": true,
     "show_source_plane": true,
+    "show_sensor_area": true,
     "show_intermediate_plane": false,
     "color_sensor_plane": "red",
     "color_source_plane": "yellow",
     "color_intermediate_plane": "green",
+    "color_sensor_area": "green",
     "show_axes": true,
     "animated_plot": false,
     "frame_rate": 500

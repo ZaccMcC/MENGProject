@@ -43,9 +43,10 @@ class Line:
 
         :return: global coordinate of line starting point
         """
+        self.position = plane.position + np.dot(self.local_position, np.vstack((plane.right, plane.up, plane.direction)))
 
         self.position = np.add(plane.position, np.add(self.position[0] * plane.right, self.position[1] * plane.up, self.position[2] * plane.direction))
-        self.direction = plane.direction
+        # self.direction = plane.direction
         # print(f"New position = {self.position}")
 
     def update_global_position(self, plane):

@@ -106,8 +106,10 @@ def create_lines_from_plane(source_plane, num_lines):
         list: List of Line objects.
     """
     local_positions = source_plane.random_points(num_lines)  # Local coordinates
+    # print(f"Local positions: {local_positions}")
+    # print(f"Number of lines: {len(local_positions)}")
 
-    lines = [Line(local_position=[x, y, 0], direction=source_plane.direction)
+    lines = [Line([x, y, 0], source_plane.direction)
              for x, y in local_positions]
 
     # Initialize their global positions based on the plane
@@ -148,6 +150,7 @@ def evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines):
         elif result == 0:  # Miss
             fig = line.plot_lines_3d(fig, intersection_coordinates, "red")
             miss += 1
+
 
     print(f"Total number of hits recorded: {hit}")
     print(f"Total number of misses recorded: {miss}")
@@ -366,9 +369,9 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, polar_p
         translation_vector = arc_movement_vector(new_plane, position)
         rotation_matrix = do_rotation(np.radians(arc_angle), "z")
 
-        logging.debug(f"Beginning of arc movement {idx} \n")
-        # logging.debug(f"Current Position: [{new_plane.position[0]:.2f}, {new_plane.position[1]:.2f}, {new_plane.position[2]:.2f}]")
-        # logging.debug(f"Next Position: [{position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f}]\n")
+        logging.debug(f"Beginning of arc movement {idx}")
+        logging.debug(f"Current Position: [{new_plane.position[0]:.2f}, {new_plane.position[1]:.2f}, {new_plane.position[2]:.2f}]")
+        logging.debug(f"Next Position: [{position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f}]\n")
 
 
         # Apply transformations
@@ -419,65 +422,53 @@ def main():
         fig = visualise_environment(fig, sourcePlane, config.visualization["color_source_plane"])
     if config.visualization["show_intermediate_plane"]:
         fig = visualise_environment(fig, interPlane, config.visualization["color_intermediate_plane"])
+    if config.visualization["show_sensor_area"]:
+        fig = visualise_environment(fig, sensorArea, config.visualization["color_sensor_area"])
 
     sensorPlane.title = "Parent axis"
     sensorPlane.print_pose()
 
     sourcePlane.plot_axis(fig)
 
-    #        ----- Step 4: Arc movements -----        #
-    # -- Phase 1: Compute arc steps -- #
-    # Gets all position P vectors for the plane as it rotates around arc
-    # Increments first through arc_theta_angles, then phis
-    arc_phi_angle = np.arange(90, -config.arc_movement["arc_phi_step"], -config.arc_movement["arc_phi_step"])
+    sourcePlane.title = "Source plane"
+    sourcePlane.print_pose()
 
-    all_positions, all_positions_polar = rotation_rings(
-        arc_phi_angle, # phi levels to the spherical arc
-        config.arc_movement["radius"],# Radius of arc movement
-        config.arc_movement["arc_theta_angle"] # steps of theta taken around the arc
-    )
-
-    # -- Phase 2: Move to first arc position -- #
-    start_pose_plane = setup_initial_pose(
-        sourcePlane,
-        config.arc_movement["initial_rotation"],
-        config.arc_movement["rotation_axis"],
-        all_positions
-    )
-
-    # -- Phase 3: Apply the plane along the arc -- #
-    # Move plane along arc and update lines
-    rotated_planes = move_plane_along_arc(
-        start_pose_plane,
-        all_positions,
-        config.arc_movement["arc_theta_angle"],
-        "z",
-        all_positions_polar,
-    )
-
-    #        ----- Step 5: Check lines -----        #
-    # Check intersections
-    # hit_count, miss_count = 0, 0
-    # for step_idx, plane_lines in enumerate(updated_lines):
-    #     for line in plane_lines:
-    #         intersection = intersection_wrapper(sensorPlane, line)
-    #         if sensorArea.record_result(intersection):
-    #             hit_count += 1
-    #             fig = line.plot_lines_3d(fig, intersection, "green")
-    #         else:
-    #             miss_count += 1
-    #             fig = line.plot_lines_3d(fig, intersection, "red")
+    # #        ----- Step 4: Arc movements -----        #
+    # # -- Phase 1: Compute arc steps -- #
+    # # Gets all position P vectors for the plane as it rotates around arc
+    # # Increments first through arc_theta_angles, then phis
+    # arc_phi_angle = np.arange(90, -config.arc_movement["arc_phi_step"], -config.arc_movement["arc_phi_step"])
     #
-    # print(f"Total Hits: {hit_count}")
-    # print(f"Total Misses: {miss_count}")
+    # all_positions, all_positions_polar = rotation_rings(
+    #     arc_phi_angle, # phi levels to the spherical arc
+    #     config.arc_movement["radius"],# Radius of arc movement
+    #     config.arc_movement["arc_theta_angle"] # steps of theta taken around the arc
+    # )
+    #
+    # # -- Phase 2: Move to first arc position -- #
+    # start_pose_plane = setup_initial_pose(
+    #     sourcePlane,
+    #     config.arc_movement["initial_rotation"],
+    #     config.arc_movement["rotation_axis"],
+    #     all_positions
+    # )
+    #
+    # # -- Phase 3: Apply the plane along the arc -- #
+    # # Move plane along arc and update lines
+    # rotated_planes = move_plane_along_arc(
+    #     start_pose_plane,
+    #     all_positions,
+    #     config.arc_movement["arc_theta_angle"],
+    #     "z",
+    #     all_positions_polar,
+    # )
 
-
-    # for i in lines:
-    #     i.update_position(new_planes[0])
 
     #        ----- Step 6: Evaluate hits and visualize lines -----        #
-    # fig, hit, miss = evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines)
+    fig, hit, miss = evaluate_hits_and_visualize(fig, sensorPlane, sensorArea, lines)
 
+    fig.show()
+    exit(2)
     #        ----- Step 7: Display the plot and results -----        #
     try:
         if config.visualization["show_output_parent"]:

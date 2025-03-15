@@ -166,18 +166,12 @@ class Plane:
             quantity (int): The number of random points to generate.
 
         Returns:
-            np.array: Array of random (x, y) points on the plane.
+            np.stack: Returns (N,2) array of random (x, y) points on the plane.
         """
-        points = []  # Placeholder for the generated points
 
-        for _ in range(quantity):
-            # Generate random coordinates (x, y) within plane dimensions
-            x = random.uniform(-self.width / 2, self.width / 2)
-            y = random.uniform(-self.length / 2, self.length / 2)
-            points.append([x, y])
-
-        # Convert the list of points into a Numpy array
-        return np.array(points)
+        x = np.random.uniform(-self.width / 2, self.width / 2, quantity)
+        y = np.random.uniform(-self.length / 2, self.length / 2, quantity)
+        return np.vstack((x, y)).T  # Returns an (N,2) array
 
     def plot_points(self, point):
         """

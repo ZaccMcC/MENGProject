@@ -9,8 +9,8 @@ def direction_vectors(array1, array2):
     return check_direction
 
 
-def parametric_equation(np, na, nu):
-    return (np - na)/nu
+def compute_t(nP, nA, nU):
+    return (nP - nA) / nU
 
 
 def calculate_intersection(line, t):
@@ -25,17 +25,16 @@ def calculate_intersection(line, t):
 def intersection_wrapper(sensorPlane, line1):
     nU = direction_vectors(sensorPlane.direction, line1.direction)
 
+    if nU != 0:
+        nA = np.dot(sensorPlane.direction, line1.position)
+        nP = np.dot(sensorPlane.direction, sensorPlane.position)
 
-    if nU > 0:
-        #print(nU)
-        nA = direction_vectors(sensorPlane.direction, line1.position)
-        nP = direction_vectors(sensorPlane.direction, sensorPlane.position)
+        # print(f"nA  = {nA}")
+        # print(f"nP  = {nP}")
+        # print(f"nU  = {nU}")
 
-        #print(nA)
-        #print(nP)
-        x = parametric_equation(nP, nA, nU)
+        x = compute_t(nP, nA, nU)
         IntersectionCoordinates = calculate_intersection(line1, x)
-        # print("Intersection occurs at " + str(IntersectionCoordinates))
 
         return IntersectionCoordinates
     else:
