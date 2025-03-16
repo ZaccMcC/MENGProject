@@ -46,11 +46,6 @@ class Line:
 
         return fig
 
-        # fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='lines', showlegend=False,
-        #                            line={'color': color, 'width': 3}))
-        #
-        # return fig
-
     def update_position(self, plane):
         """
         Updates the line's new position, after rotation of the plane

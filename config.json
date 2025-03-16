@@ -52,7 +52,7 @@
     "color_intermediate_plane": "green",
     "color_sensor_area": "green",
     "show_axes": true,
-    "animated_plot": false,
+    "animated_plot": true,
     "frame_rate": 500
   },
   "debugging": {
