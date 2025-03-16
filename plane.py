@@ -110,7 +110,7 @@ class Plane:
             k=[2, 3, 0, 3],
             color=colour,
             opacity=0.5,
-            name=self.title
+            name=f"{self.title} (Mesh)"
         ))
 
             # Add a dummy trace for the legend
@@ -118,7 +118,7 @@ class Plane:
             x=[x[0]], y=[y[0]], z=[z[0]],  # Single point (dummy)
             mode='markers',
             marker=dict(size=5, color=colour, opacity=0.5),
-            name=self.title,  # Legend entry
+            name=f"{self.title} (Trace)",  # Legend entry
             showlegend=True
         ))
 
@@ -129,7 +129,8 @@ class Plane:
                 mode='text',
                 text=f'P{i}',  # Label each corner as P0, P1, P2, etc.
                 textposition='top center',
-                showlegend=False
+                showlegend=False,
+                name=f"{self.title} (corner {i})"
             ))
 
         # print(f"Plane : {self.title}")

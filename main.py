@@ -277,7 +277,6 @@ def generate_arc_animation(fig, rotated_planes, static_traces, lines_traces):
 
     num_frames = len(rotated_planes)
 
-
     for idx, plane in enumerate(rotated_planes):
         # Debugging - Check if planes are being added
         logging.debug(f"Preparing elements for frame {idx} for plane at position {plane.position}")
@@ -310,11 +309,14 @@ def generate_arc_animation(fig, rotated_planes, static_traces, lines_traces):
                 plane_trace[i],         # Single plane
                 *axis_traces[i],        # Three axis traces
                 *lines_traces[i],        # Two line traces
+                *static_traces
             ],
             name=f"Frame {i}"
         )
         for i in range(num_frames)
     ]
+
+    check_fig_data(fig)
 
     # Ensure frames are actually created
     if not frames:
@@ -375,7 +377,10 @@ def generate_static_arc_plot(fig, rotated_planes, line_objects):
 
         fig = plane.plot_axis(fig)  # Adds axis vectors
 
-        fig.add_trace(line_objects[idx])
+        logging.debug(f"Adding line traces for plane {idx}")
+        for line in line_objects[idx]:
+            fig.add_trace(line)
+
 
     return fig
 
@@ -492,6 +497,11 @@ def visualise_intersections_seq(line):
 
     return scatter_obj
 
+def check_fig_data(fig):
+    print(f"Number of traces before animation: {len(fig.data)}")
+    for idx, trace in enumerate(fig.data):
+        print(f"Trace {idx}: Type = {type(trace)}, Name = {trace.name if hasattr(trace, 'name') else 'Unnamed'}")
+
 @profile(stream=open("memory_profile.log", "w"))
 def main():
     """
@@ -593,6 +603,7 @@ def main():
     #         print(f"Plane {plane.title} has {hit} hits and {miss} misses")
     #         lines_of_plane.append(lines.copy())
 
+    check_fig_data(fig)
     line_scatter_objects = []
     for idx, plane in enumerate(rotated_planes): # Check lines for each plane
         update_lines_global_positions(lines, plane)
@@ -625,26 +636,6 @@ def main():
     print("\n   Finished.    \n")
 
     exit(1)
-
-    # try:
-    #     if config.visualization["show_output_parent"]:
-    #         # Determine if we show animation or static plot
-    #         if config.visualization["animated_plot"]:
-    #             fig = generate_arc_animation(fig, rotated_planes, fig.data, line_scatter_objects)
-    #         else:
-    #             # lines_temp = visualise_intersections(fig, lines)
-    #             fig = generate_static_arc_plot(fig, rotated_planes, line_scatter_objects)
-    #             logging.info("Static plot generated.")
-    #
-    #         fig.show()
-    #     else:
-    #         print("Visualization disabled (show_output_parent = false).")
-    #
-    #     print("\n   Finished.    \n")
-    #
-    # except Exception as e:
-    #     print(f"Plotly Error: {e}")
-    #     exit(1)
 
 if __name__ == "__main__":
     main()

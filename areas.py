@@ -106,7 +106,8 @@ class Areas:
                 mode='text',
                 text=f'P{i}',  # Label each corner as P0, P1, P2, etc.
                 textposition='top center',
-                showlegend=False
+                showlegend=False,
+                name = f"{self.title} (corner {i})"
             ))
 
         local_axis = np.array([self.right, self.up, self.normal])
