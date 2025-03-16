@@ -4,7 +4,7 @@ import numpy as np
 import plotly.graph_objects as go
 
 class Line:
-    def __init__(self, local_position, direction):
+    def __init__(self, local_position, direction, line_id):
         """
         Initializes a line with its position relative to a plane.
 
@@ -12,6 +12,7 @@ class Line:
             local_position (array): The position of the line in the plane's local coordinate system.
             direction (array): The initial direction (same as plane's normal).
         """
+        self.line_id = line_id
         self.local_position = np.array(local_position)  # Stored in local coordinates
         self.position = None  # Will be computed in global coordinates
         self.direction = np.array(direction)
@@ -30,6 +31,12 @@ class Line:
         Returns:
             fig (Plotly figure): Updated figure.
         """
+
+        if self.result == 1:
+            color = 'green'
+        else:
+            color = 'red'
+
         x = [self.position[0], self.intersection_coordinates[0]]
         y = [self.position[1], self.intersection_coordinates[1]]
         z = [self.position[2], self.intersection_coordinates[2]]
@@ -38,6 +45,11 @@ class Line:
                                    line={'color': color, 'width': 3}))
 
         return fig
+
+        # fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='lines', showlegend=False,
+        #                            line={'color': color, 'width': 3}))
+        #
+        # return fig
 
     def update_position(self, plane):
         """
@@ -69,3 +81,11 @@ class Line:
         self.direction = plane.direction
 
         # logging.debug(f"New global position: {self.position}")
+
+    def print_info(self):
+        
+        logging.debug(f"Line {self.line_id} Position = {self.local_position[0]}, {self.local_position[1]}, {self.local_position[2]}")
+        logging.debug(f"Line {self.line_id} Direction = {self.direction}")
+        logging.debug(f"Line {self.line_id} Result = {self.result}")
+        logging.debug(f"Line {self.line_id} Intersection coordinates = {self.intersection_coordinates}")
+        logging.debug(f"Line {self.line_id} Global position = {self.position}")

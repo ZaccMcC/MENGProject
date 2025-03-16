@@ -103,6 +103,7 @@ def update_lines_global_positions(lines, new_source_plane):
     # Initialize their global positions based on the plane
     for line in lines:
         line.update_global_position(new_source_plane)
+        line.direction = new_source_plane.direction
 
     return lines
 
@@ -122,10 +123,12 @@ def create_lines_from_plane(source_plane, num_lines):
     # print(f"Local positions: {local_positions}")
     # print(f"Number of lines: {len(local_positions)}")
 
-    lines = [Line([x, y, 0], source_plane.direction)
-             for x, y in local_positions]
 
-    update_lines_global_positions(lines, source_plane)
+    lines = [
+        Line([x, y, 0], source_plane.direction, line_id=idx)
+        for idx, (x, y) in enumerate(local_positions)
+    ]
+
     return lines
 
 
@@ -258,7 +261,7 @@ def setup_initial_pose(source_plane, theta, rotation_axis, all_positions):
     return start_pose_plane
 
 
-def generate_arc_animation(fig, rotated_planes, static_traces):
+def generate_arc_animation(fig, rotated_planes, static_traces, lines):
     """
     Generates an animated visualization of the arc movement.
 
@@ -269,16 +272,27 @@ def generate_arc_animation(fig, rotated_planes, static_traces):
     Returns:
         fig (Plotly Figure): Updated figure with animation.
     """
-
+    static_traces = list(static_traces)
     frames = []
+
+    print(f"Lines at input: {np.shape(lines)}")
 
     for idx, plane in enumerate(rotated_planes):
         # Debugging - Check if planes are being added
         logging.debug(f"Adding frame {idx} for plane at position {plane.position}")
 
+        lines_at_plane = lines[idx] # Extract lines for current plane
+
         # Get plane and axis traces
         plane_trace = plane.planes_plot_3d(go.Figure(), "yellow").data[0]
         axis_traces = plane.plot_axis(go.Figure()).data  # Should return all 3 axes
+        line_traces = visualise_intersections(lines_at_plane)  # Extract the lines for this plane
+        # print(f"Line traces: {np.shape(line_traces)}")
+        #
+        # print(f"Plane direction {plane.direction}")
+        # for i, line in enumerate(lines_at_plane[:5]):  # Print first 5 lines per frame
+        #     line.print_info()
+
 
         # If axis_traces is empty, warn in logs
         if len(axis_traces) < 3:
@@ -286,8 +300,8 @@ def generate_arc_animation(fig, rotated_planes, static_traces):
 
         # Create animation frame
         frame = go.Frame(
-            data=[plane_trace] + list(axis_traces) + list(static_traces),
-            name=f"Step {idx}"
+            data= list(axis_traces) + [plane_trace] + list(static_traces) + list(line_traces),
+        name=f"Step {idx}"
         )
         frames.append(frame)
 
@@ -448,7 +462,7 @@ def main():
     sensorPlane, sourcePlane, interPlane, sensorArea = initialise_planes_and_areas()
 
     # ----- Step 2: Create lines from source plane ----- #
-    lines = create_lines_from_plane(sourcePlane, 60)
+    lines = create_lines_from_plane(sourcePlane, config.simulation["num_lines"])
 
     # ----- Step 3: Create 3D plot and visualize environment ----- #
     fig = initialise_3d_plot(sensorPlane) # Applies plot formatting and global axes
@@ -507,23 +521,39 @@ def main():
 
     print(f"Checking lines")
 
-    for plane in rotated_planes: # Check lines for each plane
-        lines = update_lines_global_positions(lines, plane)
-        hit, miss = evaluate_line_results(sensorPlane, sensorArea, lines)
-        visualise_intersections(fig, lines)
-        print(f"Plane {plane.title} has {hit} hits and {miss} misses")
-    #
-    #
     # #        ----- Step 6: Evaluate hits and visualize lines -----        #
-    # hit, miss = evaluate_line_results(sensorPlane, sensorArea, lines)
-    # visualise_intersections(fig, lines)
+    if config.visualization["animated_plot"]: # Used for animated_plot (Doesn't work)
+        lines_at_plane = []  # Stores Scatter3D objects for all planes
+        actual_line_objects = []
+
+        print(f"Size of rotated planes: {np.shape(rotated_planes)}")
+        for i, plane in enumerate(rotated_planes):
+            update_lines_global_positions(lines, plane)  # Move lines to new plane position
+            hit, miss = evaluate_line_results(sensorPlane, sensorArea, lines)  # Check intersections
+            actual_line_objects.append(lines.copy())
+
+            # Store the lines for this plane
+            lines_temp = visualise_intersections(lines)
+            print(f"Size of lines_temp: {np.shape(lines_temp)}")
+            lines_at_plane.append(lines_temp)
+        print(f"Size of lines_at_plane: {np.shape(lines_at_plane)}")
+
+    else: # Used for static plot (Does work)
+        lines_of_plane = []
+        for plane in rotated_planes: # Check lines for each plane
+            update_lines_global_positions(lines, plane)
+            hit, miss = evaluate_line_results(sensorPlane, sensorArea, lines)
+            visualise_intersections(fig, lines)
+            print(f"Plane {plane.title} has {hit} hits and {miss} misses")
+            lines_of_plane.append(lines.copy())
+            print(np.shape(lines_of_plane))
 
     #        ----- Step 7: Display the plot and results -----        #
     try:
         if config.visualization["show_output_parent"]:
             # Determine if we show animation or static plot
             if config.visualization["animated_plot"]:
-                fig = generate_arc_animation(fig, rotated_planes, fig.data)
+                fig = generate_arc_animation(fig, rotated_planes, fig.data, actual_line_objects)
             else:
                 fig = generate_static_arc_plot(fig, rotated_planes)
                 logging.info("Static plot generated.")
@@ -540,3 +570,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -34,7 +34,7 @@
     "arc_phi_step": 30
   },
   "simulation": {
-    "num_lines": 60
+    "num_lines": 2
   },
   "intersection": {
     "max_distance": 100,
