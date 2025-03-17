@@ -18,8 +18,12 @@ class Areas:
         # Compute local reference frame (right, up, normal)
         self.right, self.up, self.normal = compute_local_axes(self.direction)
 
+        # Stores the 'illumination' results
+        self.illumination = None
+
         # Compute initial corners using the local frame
         self.update_corners()
+
         # print(self.corners)
 
     def update_corners(self):

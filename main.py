@@ -148,7 +148,7 @@ def evaluate_line_results(sensorPlane, sensorArea, lines):
 
     Args:
         sensorPlane: The plane intersecting with the lines.
-        sensorArea: The target area to evaluate hits.
+        sensorArea: List of all sensor objects - target areas to evaluate hits.
         lines: List of Line objects.
 
     Returns:
@@ -157,22 +157,29 @@ def evaluate_line_results(sensorPlane, sensorArea, lines):
     """
     hit = 0
     miss = 0
+    result = None
+
+    # Reset previous sensor illumination values
+    for sensors in sensorArea:
+        sensors.illumination = 0
 
     for line in lines:
         # Calculate intersection between the line and the sensor plane
         intersection_coordinates = intersection_wrapper(sensorPlane, line)
+        line.intersection_coordinates = intersection_coordinates
+        for sensors in sensorArea:
+            # Check if the intersection point is in the target area
+            result = sensors.record_result(intersection_coordinates)
+            if result == 1:
+                line.result = 1
+                hit += 1
+                logging.debug(f"Line {line.line_id} hit {sensors.title}")
+                continue
 
-        # Check if the intersection point is in the target area
-        result = sensorArea.record_result(intersection_coordinates)
-
-        if result == 1:  # Hit
-            line.result = 1
-            hit += 1
-        elif result == 0:  # Miss
+        if result == 0:  # Miss
             line.result = 0
             miss += 1
-
-        line.intersection_coordinates = intersection_coordinates
+            logging.debug(f"Line {line.line_id} missed")
 
     return hit, miss
 
@@ -278,7 +285,6 @@ def generate_arc_animation(fig, rotated_planes, static_traces, lines_traces):
         fig (Plotly Figure): Updated figure with animation.
     """
     static_traces = list(static_traces)
-    print(f"Static traces: {static_traces}")
     plane_trace = []
     axis_traces = []
 
@@ -472,6 +478,7 @@ def visualise_intersections(fig, lines):
 
     return fig
 
+
 def visualise_intersections_seq(line):
     """
     Checks intersection results, and adds to plot to indicate results - hits and misses in green and red.
@@ -501,10 +508,12 @@ def visualise_intersections_seq(line):
 
     return scatter_obj
 
+
 def check_fig_data(fig):
-    logging.debug(f"Number of traces before animation: {len(fig.data)}")
-    for idx, trace in enumerate(fig.data):
-        logging.debug(f"Trace {idx}: Type = {type(trace)}, Name = {trace.name if hasattr(trace, 'name') else 'Unnamed'}")
+    logging.debug("\n")
+    # logging.debug(f"Number of traces before animation: {len(fig.data)}")
+    # for idx, trace in enumerate(fig.data):
+    #     logging.debug(f"Trace {idx}: Type = {type(trace)}, Name = {trace.name if hasattr(trace, 'name') else 'Unnamed'}")
 
 @profile(stream=open("memory_profile.log", "w"))
 def main():
@@ -535,10 +544,9 @@ def main():
     if config.visualization["show_intermediate_plane"]:
         fig = visualise_environment(fig, interPlane, config.visualization["color_intermediate_plane"])
     if config.visualization["show_sensor_area"]:
-        for sensor in sensorAreas:
+        for sensor in sensorAreas: # Display all defined sensors on the plot
             fig = visualise_environment(fig, sensor, config.visualization["color_sensor_area"])
-    fig.show()
-    exit(2)
+
     sensorPlane.title = "Parent axis"
     sensorPlane.print_pose()
 
@@ -586,35 +594,35 @@ def main():
     # #        ----- Step 6: Evaluate hits and visualize lines -----        #
     check_fig_data(fig)
     line_scatter_objects = []
-    for idx, plane in enumerate(rotated_planes): # Check lines for each plane
+    for idx, plane in enumerate(rotated_planes):  # Check lines for each plane
         update_lines_global_positions(lines, plane)
-        hit, miss = evaluate_line_results(sensorPlane, sensorArea, lines)
-        print(f"Plane {plane.title} has {hit} hits and {miss} misses")
+        logging.debug(f"Checking intersections for plane {idx} {plane.title}")
+        hit, miss = evaluate_line_results(sensorPlane, sensorAreas, lines)
+
+        logging.info(f"Plane {plane.title} has {hit} hits and {miss} misses")
 
         lines_for_plane = []
         for line in lines:
-            # line_scatter_objects.append(visualise_intersections_seq(line))
-            lines_for_plane.append(visualise_intersections_seq(line))
-            print(f"Size of lines_for_plane: {np.shape(lines_for_plane)}")
+            lines_for_plane.append(visualise_intersections_seq(line))  # Stores line objects for current plane
+        # Stores line objects for all planes
         line_scatter_objects.append(lines_for_plane)
-        print(f"Size of line_scatter_objects: {np.shape(line_scatter_objects)}")
 
     #        ----- Step 7: Display the plot and results -----        #
 
-    if config.visualization["show_output_parent"]:
-        # Determine if we show animation or static plot
-        if config.visualization["animated_plot"]:
-            fig = generate_arc_animation(fig, rotated_planes, fig.data, line_scatter_objects)
-        else:
-            # lines_temp = visualise_intersections(fig, lines)
-            fig = generate_static_arc_plot(fig, rotated_planes, line_scatter_objects)
-            logging.info("Static plot generated.")
+    # show animation or static plot
+    if config.visualization["animated_plot"]:
+        fig = generate_arc_animation(fig, rotated_planes, fig.data, line_scatter_objects)
+    else:
+        fig = generate_static_arc_plot(fig, rotated_planes, line_scatter_objects)
+        logging.info("Static plot generated.")
 
+    # Show any plot
+    if config.visualization["show_output_parent"]:
         fig.show()
     else:
-        print("Visualization disabled (show_output_parent = false).")
+        logging.debug("Visualization disabled (show_output_parent = false).")
 
-    print("\n   Finished.    \n")
+    print("\nFinished.    \n")
 
     exit(1)
 

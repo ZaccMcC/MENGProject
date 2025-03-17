@@ -22,7 +22,7 @@
   "sensor_areas": {
     "sensor_A": {
       "title": "sensor A",
-      "position": [2, 2, 0],
+      "position": [-2, -2, 0],
       "direction": [0, 0, 1],
       "width": 2,
       "length": 2
@@ -52,7 +52,7 @@
     "tolerance": 0.01
   },
   "visualization": {
-    "show_output_parent": true,
+    "show_output_parent": false,
     "show_sensor_plane": true,
     "show_source_plane": false,
     "show_sensor_area": true,
