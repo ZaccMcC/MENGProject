@@ -569,7 +569,8 @@ def main():
     if config.visualization["show_aperture_area"]:
         for aperture in aperture_areas:  # Display all defined apertures on the plot
             fig = visualise_environment(fig, aperture, config.visualization["color_aperture_area"])
-
+    fig.show()
+    exit(1)
     sensorPlane.title = "Parent axis"
     sensorPlane.print_pose()
 

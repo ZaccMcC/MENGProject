@@ -24,15 +24,15 @@
       "title": "Sensor A",
       "position": [-2, -2, 0],
       "direction": [0, 0, 1],
-      "width": 2,
-      "length": 2
+      "width": 3,
+      "length": 4
     },
     "sensor_B": {
       "title": "Sensor B",
       "position": [2, 2, 0],
       "direction": [0, 0, 1],
-      "width": 2,
-      "length": 2
+      "width": 1,
+      "length": 1
     }
   },
   "aperture_areas": {
