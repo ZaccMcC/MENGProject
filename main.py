@@ -271,7 +271,6 @@ def generate_arc_animation(fig, rotated_planes, static_traces, lines_traces):
     """
     static_traces = list(static_traces)
     print(f"Static traces: {static_traces}")
-    frames = []
     plane_trace = []
     axis_traces = []
 
@@ -293,14 +292,11 @@ def generate_arc_animation(fig, rotated_planes, static_traces, lines_traces):
     # Line trace [0] type: <class 'list'>: shape (2, )
 
     # Debug messages
-    logging.debug(f"Plane trace type: {type(plane_trace)}: shape {np.shape(plane_trace)}")
-    logging.debug(f"Plane trace [0] type: {type(plane_trace[0])}: shape {np.shape(plane_trace[0])}")
-    logging.debug(f"Axis trace type: {type(axis_traces)}: shape {np.shape(axis_traces)}")
-    logging.debug(f"Axis trace [0] type: {type(axis_traces[0])}: shape {np.shape(axis_traces[0])}")
-    logging.debug(f"Line trace type: {type(lines_traces)}: shape {np.shape(lines_traces)}")
-    logging.debug(f"Line trace [0] type: {type(lines_traces[0])}: shape {np.shape(lines_traces[0])}")
-    logging.debug(f"Static trace type: {type(static_traces)}: shape {np.shape(static_traces)}")
-    logging.debug(f"Static trace [0] type: {type(static_traces[0])}: shape {np.shape(static_traces[0])}")
+    debug_params = [plane_trace, axis_traces, lines_traces]
+    params_str = "plane_trace", "axis_traces", "lines_traces"
+    for i, param in enumerate(debug_params):
+        logging.debug(f"Param {params_str[i]} type: {type(param)}: shape {np.shape(param)}")
+        logging.debug(f"Param {params_str[i]} [0] type: {type(param[0])}: shape {np.shape(param[0])}")
 
     # Prepare the actual frames
     frames = [
