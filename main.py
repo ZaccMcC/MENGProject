@@ -31,18 +31,17 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
     # Define the intermediate plane
     interPlane = Plane("Inter-plane", **config.planes["intermediate_plane"])
 
-    # Define the sensor area (target area on the sensor plane)
-    sensorArea = Areas(**config.sensor_areas["sensor_B"])
-
+    # Extract sensor keys from JSON file
     sensor_keys = config.sensor_areas.keys()
 
-    sensorAreas = [Areas(**config.sensor_areas[sensor]) for sensor in sensor_keys
-                   ]
+    # Define the sensor area (target area on the sensor plane)
+    sensorAreas = [Areas(**config.sensor_areas[sensor]) for sensor in sensor_keys]
 
-    for sensors in sensorAreas:
-        print(sensors.title)
+    # Extract aperture keys from JSON aperture_areas
+    aperture_keys = config.aperture_areas.keys()
+    apertureAreas = [Areas(**config.aperture_areas[aperture]) for aperture in aperture_keys]
 
-    return sensorPlane, sourcePlane, interPlane, sensorAreas
+    return sensorPlane, sourcePlane, interPlane, sensorAreas, apertureAreas
 
 
 def initialise_3d_plot(sensorPlane):
@@ -549,7 +548,7 @@ def main():
         7. Displays the final 3D plot and prints the hit/miss results.
     """
     # ----- Step 1: Initialize planes and areas  ----- #
-    sensorPlane, sourcePlane, interPlane, sensorAreas = initialise_planes_and_areas()
+    sensorPlane, sourcePlane, interPlane, sensorAreas, aperture_areas = initialise_planes_and_areas()
 
     # ----- Step 2: Create lines from source plane ----- #
     lines = create_lines_from_plane(sourcePlane, config.simulation["num_lines"])
@@ -567,6 +566,9 @@ def main():
     if config.visualization["show_sensor_area"]:
         for sensor in sensorAreas:  # Display all defined sensors on the plot
             fig = visualise_environment(fig, sensor, config.visualization["color_sensor_area"])
+    if config.visualization["show_aperture_area"]:
+        for aperture in aperture_areas:  # Display all defined apertures on the plot
+            fig = visualise_environment(fig, aperture, config.visualization["color_aperture_area"])
 
     sensorPlane.title = "Parent axis"
     sensorPlane.print_pose()
@@ -644,8 +646,6 @@ def main():
         logging.debug("Visualization disabled (show_output_parent = false).")
 
     print("\nFinished.    \n")
-
-    # exit(1)
 
 
 if __name__ == "__main__":

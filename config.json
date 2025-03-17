@@ -21,20 +21,37 @@
   },
   "sensor_areas": {
     "sensor_A": {
-      "title": "sensor A",
+      "title": "Sensor A",
       "position": [-2, -2, 0],
       "direction": [0, 0, 1],
       "width": 2,
       "length": 2
     },
     "sensor_B": {
-      "title": "sensor B",
+      "title": "Sensor B",
       "position": [2, 2, 0],
       "direction": [0, 0, 1],
       "width": 2,
       "length": 2
     }
   },
+  "aperture_areas": {
+    "Aperture_A": {
+      "title": "Aperture_A",
+      "position": [-2, -2, 1],
+      "direction": [0, 0, 1],
+      "width": 2,
+      "length": 2
+    },
+    "Aperture_B": {
+      "title": "Aperture_B",
+      "position": [2, 2, 1],
+      "direction": [0, 0, 1],
+      "width": 2,
+      "length": 2
+    }
+  },
+
   "arc_movement": {
     "execute_movements": true,
     "initial_rotation": 90,
@@ -52,17 +69,19 @@
     "tolerance": 0.01
   },
   "visualization": {
-    "show_output_parent": false,
+    "show_output_parent": true,
     "show_sensor_plane": true,
     "show_source_plane": false,
     "show_sensor_area": true,
+    "show_aperture_area": true,
     "show_intermediate_plane": false,
     "color_sensor_plane": "red",
     "color_source_plane": "yellow",
     "color_intermediate_plane": "green",
     "color_sensor_area": "green",
+    "color_aperture_area": "black",
     "show_axes": true,
-    "animated_plot": true,
+    "animated_plot": false,
     "frame_rate": 500
   },
   "debugging": {

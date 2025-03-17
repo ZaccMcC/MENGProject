@@ -3,6 +3,7 @@ import logging
 
 import numpy as np
 
+
 class Config:
     def __init__(self, file_path="config.json"):
         with open(file_path, "r") as f:
@@ -11,6 +12,7 @@ class Config:
         # Store parameters in instance variables
         self.planes = data["planes"]
         self.sensor_areas = data["sensor_areas"]
+        self.aperture_areas = data["aperture_areas"]
         self.arc_movement = data["arc_movement"]
         self.simulation = data["simulation"]
         self.intersection = data["intersection"]
