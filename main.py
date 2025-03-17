@@ -11,6 +11,7 @@ from memory_profiler import profile
 import logging
 from config import config
 
+
 # Valid logging levels "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
 
 
@@ -36,7 +37,7 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
     sensor_keys = config.sensor_areas.keys()
 
     sensorAreas = [Areas(**config.sensor_areas[sensor]) for sensor in sensor_keys
-    ]
+                   ]
 
     for sensors in sensorAreas:
         print(sensors.title)
@@ -131,7 +132,6 @@ def create_lines_from_plane(source_plane, num_lines):
     # print(f"Local positions: {local_positions}")
     # print(f"Number of lines: {len(local_positions)}")
 
-
     lines = [
         Line([x, y, 0], source_plane.direction, line_id=idx)
         for idx, (x, y) in enumerate(local_positions)
@@ -170,18 +170,38 @@ def evaluate_line_results(sensorPlane, sensorArea, lines):
         for sensors in sensorArea:
             # Check if the intersection point is in the target area
             result = sensors.record_result(intersection_coordinates)
-            if result == 1:
-                line.result = 1
-                hit += 1
-                logging.debug(f"Line {line.line_id} hit {sensors.title}")
-                continue
 
+            # if intersection occurred then,
+            if result == 1:
+                # Store result:
+                hit, line.result, sensors.illumination = hit + 1, 1, sensors.illumination + 1
+
+                # logging.debug(f"Line {line.line_id} hit {sensors.title}")
+                continue  # Move to next line
+
+        # For each line, checked all sensors = no miss
         if result == 0:  # Miss
             line.result = 0
             miss += 1
-            logging.debug(f"Line {line.line_id} missed")
+            # logging.debug(f"Line {line.line_id} missed")
 
     return hit, miss
+
+
+def handle_results(sensor_objects):
+    """
+    Handles the results from intersection calculations
+    Args:
+        sensor_objects: List of all sensor objects
+
+    Returns:
+
+    """
+    for sensors in sensor_objects:
+        if sensors.illumination != 0:
+            print(f"{sensors.title} was illuminated")
+        else:
+            print(f"Sensor {sensors.title} was not illuminated")
 
 
 def do_rotation(theta, axis):
@@ -264,10 +284,8 @@ def setup_initial_pose(source_plane, theta, rotation_axis, all_positions):
     translation_vector = arc_movement_vector(start_pose_plane, all_positions[0])
     start_pose_plane.translate_plane(translation_vector)
 
-
     start_pose_plane.title = "Plane moved to initial arc position"
     start_pose_plane.print_pose()
-
 
     return start_pose_plane
 
@@ -295,7 +313,8 @@ def generate_arc_animation(fig, rotated_planes, static_traces, lines_traces):
         logging.debug(f"Preparing elements for frame {idx} for plane at position {plane.position}")
 
         # Get plane and axis traces
-        plane_trace.append(plane.planes_plot_3d(go.Figure(), "yellow").data[0]) # makes plane_trace[idx] type = "plotly.graph_objs._mesh3d.Mesh3d"
+        plane_trace.append(plane.planes_plot_3d(go.Figure(), "yellow").data[
+                               0])  # makes plane_trace[idx] type = "plotly.graph_objs._mesh3d.Mesh3d"
         axis_traces.append(list(plane.plot_axis(go.Figure()).data))  # makes axis_traces[idx] type = "tuple"
 
     # Plane trace is type list, shape (length rotated_planes, )
@@ -316,9 +335,9 @@ def generate_arc_animation(fig, rotated_planes, static_traces, lines_traces):
     frames = [
         go.Frame(
             data=[
-                plane_trace[i],         # Single plane
-                *axis_traces[i],        # Three axis traces
-                *lines_traces[i],        # Two line traces
+                plane_trace[i],  # Single plane
+                *axis_traces[i],  # Three axis traces
+                *lines_traces[i],  # Two line traces
                 *static_traces
             ],
             name=f"Frame {i}"
@@ -346,7 +365,8 @@ def generate_arc_animation(fig, rotated_planes, static_traces, lines_traces):
                     "method": "animate"
                 },
                 {
-                    "args": [[None], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate", "transition": {"duration": 0}}],
+                    "args": [[None], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate",
+                                      "transition": {"duration": 0}}],
                     "label": "⏸ Pause",
                     "method": "animate"
                 }
@@ -391,7 +411,6 @@ def generate_static_arc_plot(fig, rotated_planes, line_objects):
         for line in line_objects[idx]:
             fig.add_trace(line)
 
-
     return fig
 
 
@@ -428,16 +447,17 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, polar_p
                               rotated_planes[idx - 1].direction, rotated_planes[idx - 1].width,
                               rotated_planes[idx - 1].length)
             # Overwrite newly generated local axes, preserving previous
-            new_plane.right, new_plane.up, new_plane.direction = rotated_planes[idx - 1].right, rotated_planes[idx - 1].up, rotated_planes[idx - 1].direction
+            new_plane.right, new_plane.up, new_plane.direction = rotated_planes[idx - 1].right, rotated_planes[
+                idx - 1].up, rotated_planes[idx - 1].direction
 
         # Compute transformation
         translation_vector = arc_movement_vector(new_plane, position)
         rotation_matrix = do_rotation(np.radians(arc_angle), "z")
 
         logging.debug(f"Beginning of arc movement {idx}")
-        logging.debug(f"Current Position: [{new_plane.position[0]:.2f}, {new_plane.position[1]:.2f}, {new_plane.position[2]:.2f}]")
+        logging.debug(
+            f"Current Position: [{new_plane.position[0]:.2f}, {new_plane.position[1]:.2f}, {new_plane.position[2]:.2f}]")
         logging.debug(f"Next Position: [{position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f}]\n")
-
 
         # Apply transformations
 
@@ -515,6 +535,7 @@ def check_fig_data(fig):
     # for idx, trace in enumerate(fig.data):
     #     logging.debug(f"Trace {idx}: Type = {type(trace)}, Name = {trace.name if hasattr(trace, 'name') else 'Unnamed'}")
 
+
 @profile(stream=open("memory_profile.log", "w"))
 def main():
     """
@@ -534,7 +555,7 @@ def main():
     lines = create_lines_from_plane(sourcePlane, config.simulation["num_lines"])
 
     # ----- Step 3: Create 3D plot and visualize environment ----- #
-    fig = initialise_3d_plot(sensorPlane) # Applies plot formatting and global axes
+    fig = initialise_3d_plot(sensorPlane)  # Applies plot formatting and global axes
 
     # Apply visualization settings from config
     if config.visualization["show_sensor_plane"]:
@@ -544,7 +565,7 @@ def main():
     if config.visualization["show_intermediate_plane"]:
         fig = visualise_environment(fig, interPlane, config.visualization["color_intermediate_plane"])
     if config.visualization["show_sensor_area"]:
-        for sensor in sensorAreas: # Display all defined sensors on the plot
+        for sensor in sensorAreas:  # Display all defined sensors on the plot
             fig = visualise_environment(fig, sensor, config.visualization["color_sensor_area"])
 
     sensorPlane.title = "Parent axis"
@@ -563,9 +584,9 @@ def main():
     # arc_phi_angle = [90]
 
     all_positions, all_positions_polar = rotation_rings(
-        arc_phi_angle, # phi levels to the spherical arc
-        config.arc_movement["radius"],# Radius of arc movement
-        config.arc_movement["arc_theta_angle"] # steps of theta taken around the arc
+        arc_phi_angle,  # phi levels to the spherical arc
+        config.arc_movement["radius"],  # Radius of arc movement
+        config.arc_movement["arc_theta_angle"]  # steps of theta taken around the arc
     )
 
     # -- Phase 2: Move to first arc position -- #
@@ -598,7 +619,7 @@ def main():
         update_lines_global_positions(lines, plane)
         logging.debug(f"Checking intersections for plane {idx} {plane.title}")
         hit, miss = evaluate_line_results(sensorPlane, sensorAreas, lines)
-
+        handle_results(sensorAreas)
         logging.info(f"Plane {plane.title} has {hit} hits and {miss} misses")
 
         lines_for_plane = []
@@ -624,8 +645,8 @@ def main():
 
     print("\nFinished.    \n")
 
-    exit(1)
+    # exit(1)
+
 
 if __name__ == "__main__":
     main()
-
