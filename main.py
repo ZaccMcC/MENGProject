@@ -31,9 +31,17 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
     interPlane = Plane("Inter-plane", **config.planes["intermediate_plane"])
 
     # Define the sensor area (target area on the sensor plane)
-    sensorArea = Areas("Sensor Area", **config.sensor_area)
+    sensorArea = Areas(**config.sensor_areas["sensor_B"])
 
-    return sensorPlane, sourcePlane, interPlane, sensorArea
+    sensor_keys = config.sensor_areas.keys()
+
+    sensorAreas = [Areas(**config.sensor_areas[sensor]) for sensor in sensor_keys
+    ]
+
+    for sensors in sensorAreas:
+        print(sensors.title)
+
+    return sensorPlane, sourcePlane, interPlane, sensorAreas
 
 
 def initialise_3d_plot(sensorPlane):
@@ -494,9 +502,9 @@ def visualise_intersections_seq(line):
     return scatter_obj
 
 def check_fig_data(fig):
-    print(f"Number of traces before animation: {len(fig.data)}")
+    logging.debug(f"Number of traces before animation: {len(fig.data)}")
     for idx, trace in enumerate(fig.data):
-        print(f"Trace {idx}: Type = {type(trace)}, Name = {trace.name if hasattr(trace, 'name') else 'Unnamed'}")
+        logging.debug(f"Trace {idx}: Type = {type(trace)}, Name = {trace.name if hasattr(trace, 'name') else 'Unnamed'}")
 
 @profile(stream=open("memory_profile.log", "w"))
 def main():
@@ -511,7 +519,7 @@ def main():
         7. Displays the final 3D plot and prints the hit/miss results.
     """
     # ----- Step 1: Initialize planes and areas  ----- #
-    sensorPlane, sourcePlane, interPlane, sensorArea = initialise_planes_and_areas()
+    sensorPlane, sourcePlane, interPlane, sensorAreas = initialise_planes_and_areas()
 
     # ----- Step 2: Create lines from source plane ----- #
     lines = create_lines_from_plane(sourcePlane, config.simulation["num_lines"])
@@ -527,8 +535,10 @@ def main():
     if config.visualization["show_intermediate_plane"]:
         fig = visualise_environment(fig, interPlane, config.visualization["color_intermediate_plane"])
     if config.visualization["show_sensor_area"]:
-        fig = visualise_environment(fig, sensorArea, config.visualization["color_sensor_area"])
-
+        for sensor in sensorAreas:
+            fig = visualise_environment(fig, sensor, config.visualization["color_sensor_area"])
+    fig.show()
+    exit(2)
     sensorPlane.title = "Parent axis"
     sensorPlane.print_pose()
 
@@ -574,31 +584,6 @@ def main():
     print(f"Checking lines")
 
     # #        ----- Step 6: Evaluate hits and visualize lines -----        #
-    # if config.visualization["animated_plot"]: # Used for animated_plot (Doesn't work)
-    #     lines_at_plane = []  # Stores Scatter3D objects for all planes
-    #     actual_line_objects = []
-    #
-    #     print(f"Size of rotated planes: {np.shape(rotated_planes)}")
-    #     for i, plane in enumerate(rotated_planes):
-    #         update_lines_global_positions(lines, plane)  # Move lines to new plane position
-    #         hit, miss = evaluate_line_results(sensorPlane, sensorArea, lines)  # Check intersections
-    #         actual_line_objects.append(lines.copy())
-    #
-    #         # Store the lines for this plane
-    #         lines_temp = visualise_intersections(lines)
-    #         print(f"Size of lines_temp: {np.shape(lines_temp)}")
-    #         lines_at_plane.append(lines_temp)
-    #     print(f"Size of lines_at_plane: {np.shape(lines_at_plane)}")
-    #
-    # else: # Used for static plot (Does work)
-    #     lines_of_plane = []
-    #     for plane in rotated_planes: # Check lines for each plane
-    #         update_lines_global_positions(lines, plane)
-    #         hit, miss = evaluate_line_results(sensorPlane, sensorArea, lines)
-    #         lines_temp = visualise_intersections(fig, lines)
-    #         print(f"Plane {plane.title} has {hit} hits and {miss} misses")
-    #         lines_of_plane.append(lines.copy())
-
     check_fig_data(fig)
     line_scatter_objects = []
     for idx, plane in enumerate(rotated_planes): # Check lines for each plane

@@ -19,11 +19,21 @@
       "length": 5
     }
   },
-  "sensor_area": {
-    "position": [2, 2, 0],
-    "direction": [0, 0, 1],
-    "width": 2,
-    "length": 2
+  "sensor_areas": {
+    "sensor_A": {
+      "title": "sensor A",
+      "position": [2, 2, 0],
+      "direction": [0, 0, 1],
+      "width": 2,
+      "length": 2
+    },
+    "sensor_B": {
+      "title": "sensor B",
+      "position": [2, 2, 0],
+      "direction": [0, 0, 1],
+      "width": 2,
+      "length": 2
+    }
   },
   "arc_movement": {
     "execute_movements": true,

@@ -10,7 +10,7 @@ class Config:
 
         # Store parameters in instance variables
         self.planes = data["planes"]
-        self.sensor_area = data["sensor_area"]
+        self.sensor_areas = data["sensor_areas"]
         self.arc_movement = data["arc_movement"]
         self.simulation = data["simulation"]
         self.intersection = data["intersection"]
