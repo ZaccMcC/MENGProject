@@ -512,7 +512,8 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, seconda
                 # Apply initial setup for this meridian
                 # 1. Rotate around z-axis to the correct theta angle
                 theta_rotation = secondary_axis[idx]  # This should be the theta value for this meridian
-                new_plane.rotate_plane(do_rotation(np.radians(theta_rotation), "z"))
+
+                new_plane.rotate_plane(do_rotation(theta_rotation, "z"))
 
                 # 2. Translate to the start position for this meridian
                 translation_vector = arc_movement_vector(new_plane, position)
@@ -532,23 +533,20 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, seconda
                 translation_vector = arc_movement_vector(new_plane, position)
 
                 # Apply rotation to align with the origin in the z axis
-                primary_axis = rotation_axis[0]
-                rotation_matrix = do_rotation(np.radians(arc_angle), primary_axis)
+                rotation_matrix = do_rotation(arc_angle, rotation_axis[0])
                 new_plane.rotate_plane(rotation_matrix)
                 logging.info(f"Rotating {arc_angle}° around {rotation_axis[0]}-axis")
 
 
                 # Check if secondary angle changed (requires additional rotation)
                 if secondary_axis[idx] != current_secondary:
-                    secondary_axis_type = rotation_axis[1]
-
                     correction_angle = current_secondary - secondary_axis[idx]
 
-                    logging.debug(f"Since current {current_secondary} != {secondary_axis[idx]}")
+                    logging.debug(f"Since plane {idx} secondary {current_secondary} != {secondary_axis[idx]}")
                     logging.info(f"Rotating {-correction_angle}° around {rotation_axis[1]}-axis")
 
                     # correction_angle = 45
-                    new_plane.rotate_plane(do_rotation(np.radians(-correction_angle), secondary_axis_type))
+                    new_plane.rotate_plane(do_rotation(-correction_angle, rotation_axis[1]))
                     current_secondary = secondary_axis[idx]
 
 
@@ -671,14 +669,14 @@ def main():
         arc_theta_angle = config.arc_movement["arc_theta_angle"]
         sequence_ID = 2  # 2 for horizontal circles movement
         rotation_axis = ["z", "y"]
-        rotation_step = config.arc_movement["arc_theta_angle"]
+        rotation_step = np.radians(config.arc_movement["arc_theta_angle"])
     else:
         print("Vertical circles movement")
         arc_phi_angle = 10
         arc_theta_angle = [0, 45]
         sequence_ID = 1  # 1 for vertical circles movement
         rotation_axis = ["y", "z"]
-        rotation_step = -arc_phi_angle
+        rotation_step = np.radians(-arc_phi_angle)
 
 
     all_positions, secondary_movement = rotation_rings(
