@@ -18,7 +18,7 @@ from config import config
 def initialise_planes_and_areas():
     """
 Initialises all planes and the target area.
-Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
+Returns: sensorPlane, sourcePlane, aperturePlane, and sensorArea
 """
 
     # Define the source plane
@@ -29,7 +29,7 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
     sensorPlane = Plane("Sensor Plane", **config.planes["sensor_plane"])
 
     # Define the intermediate plane
-    interPlane = Plane("Inter-plane", **config.planes["intermediate_plane"])
+    aperturePlane = Plane("Aperture Plane", **config.planes["aperture_plane"])
 
     # Extract sensor keys from JSON file
     sensor_keys = config.sensor_areas.keys()
@@ -41,7 +41,7 @@ Returns: sensorPlane, sourcePlane, interPlane, and sensorArea
     aperture_keys = config.aperture_areas.keys()
     apertureAreas = [Areas(**config.aperture_areas[aperture]) for aperture in aperture_keys]
 
-    return sensorPlane, sourcePlane, interPlane, sensorAreas, apertureAreas
+    return sensorPlane, sourcePlane, aperturePlane, sensorAreas, apertureAreas
 
 
 def initialise_3d_plot(sensorPlane):
@@ -93,7 +93,7 @@ def initialise_3d_plot(sensorPlane):
     return fig
 
 
-def visualise_environment(fig, planeObject, colour):  # sensorPlane, sourcePlane, interPlane, sensorArea):
+def visualise_environment(fig, planeObject, colour):  # sensorPlane, sourcePlane, aperturePlane, sensorArea):
     """
     Adds planes and areas to the 3D plot for visualization.
     Returns: Updated Plotly figure.
@@ -139,7 +139,27 @@ def create_lines_from_plane(source_plane, num_lines):
     return lines
 
 
-def evaluate_line_results(sensorPlane, sensorArea, lines):
+def intersection_checking(targetArea, intersection_coordinates):
+    """
+    Gets input of target areas and coordinate of intersection
+    Checks if the intersection point is in the target area.
+    """
+    result = None
+
+    for target in targetArea:
+        # Check if the intersection point is in the target area
+        result = target.record_result(intersection_coordinates)
+        logging.debug(f"Checking intersection with {target.title}...")
+
+        if result == 1: # Hit occurs
+            return 1, target
+    if result == 0:  # Miss
+        return 0, 0
+    else:
+        return -1, 0
+
+
+def evaluate_line_results(sensorPlane, sensorArea, aperturePlane, apertureAreas, lines):
     """
     Checks intersections of lines with the sensor plane and evaluates whether they hit the target area.
 
@@ -163,26 +183,34 @@ def evaluate_line_results(sensorPlane, sensorArea, lines):
         sensors.illumination = 0
 
     for line in lines:
-        # Calculate intersection between the line and the sensor plane
-        intersection_coordinates = intersection_wrapper(sensorPlane, line)
-        line.intersection_coordinates = intersection_coordinates
-        for sensors in sensorArea:
-            # Check if the intersection point is in the target area
-            result = sensors.record_result(intersection_coordinates)
+        line.result = 0
+        # Calculate intersection between the line and the aperture plane
+        aperture_intersection_coordinates = intersection_wrapper(aperturePlane, line)
+        # Set intersection coordinate of line object
+        line.intersection_coordinates = aperture_intersection_coordinates
 
-            # if intersection occurred then,
-            if result == 1:
-                # Store result:
-                hit, line.result, sensors.illumination = hit + 1, 1, sensors.illumination + 1
+        logging.debug(f"Checking line {line.line_id} intersection with apertures...")
+        # Check if intersection with apertures
+        aperture_intersection, _ = intersection_checking(apertureAreas, aperture_intersection_coordinates)
+        if aperture_intersection == 1: # Hit, at apertures
+            logging.debug(f"Line {line.line_id} hit apertures")
+            # Get intersection coordinates with sensor plane
+            sensor_intersection_coordinates = intersection_wrapper(sensorPlane, line)
+            # Check intersection with sensor areas
+            sensor_intersection, sensor = intersection_checking(sensorArea, sensor_intersection_coordinates)
+            line.intersection_coordinates = sensor_intersection_coordinates
+            if sensor_intersection == 1: # Intersection occurs at sensor
+                hit, line.result, sensor.illumination = hit + 1, 1, sensor.illumination + 1
 
-                # logging.debug(f"Line {line.line_id} hit {sensors.title}")
+                # logging.debug(f"Line {line.line_id} hit {sensor.title}")
                 continue  # Move to next line
-
-        # For each line, checked all sensors = no miss
-        if result == 0:  # Miss
-            line.result = 0
+            if sensor_intersection == 0:
+                miss += 1
+                continue
+        else:
+            logging.debug(f"Line {line.line_id} missed apertures")
             miss += 1
-            # logging.debug(f"Line {line.line_id} missed")
+            continue
 
     return hit, miss
 
@@ -198,9 +226,9 @@ def handle_results(sensor_objects):
     """
     for sensors in sensor_objects:
         if sensors.illumination != 0:
-            print(f"{sensors.title} was illuminated")
+            logging.debug(f"{sensors.title} was illuminated")
         else:
-            print(f"Sensor {sensors.title} was not illuminated")
+            logging.debug(f"Sensor {sensors.title} was not illuminated")
 
 
 def do_rotation(theta, axis):
@@ -208,7 +236,7 @@ def do_rotation(theta, axis):
     Gets rotation matrix for specified axis and angle.
 
     Args:
-        theta: The angle of rotation in degrees (converted to radians later).
+        theta: The angle of rotation in radians.
         axis: The axis of rotation.
 
     Returns:
@@ -289,21 +317,29 @@ def setup_initial_pose(source_plane, theta, rotation_axis, all_positions):
     return start_pose_plane
 
 
-def generate_arc_animation(fig, rotated_planes, static_traces, lines_traces):
+def generate_arc_animation(fig, rotated_planes, lines_traces, results):
     """
     Generates an animated visualization of the arc movement.
+
+    Data type notes --
+        Plane trace is type list, shape (length rotated_planes,)
+        Plane trace [0] type: <class 'plotly.graph_objs._mesh3d.Mesh3d'>: shape ()
+        Axis trace is type list, shape (length rotated_planes, 3)
+        Axis trace [0] type: <class 'list'>: shape (3,)
+        Line trace is type list, shape (length rotated_planes, 2)
+        Line trace [0] type: <class 'list'>: shape (2,)
 
     Args:
         fig (Plotly Figure): The figure used for visualization.
         rotated_planes (list): The list of planes from move_plane_along_arc().
-        static_traces (list): Static objects to keep in the visualization.
         lines_traces (list): List of Line objects for each plane.
     Returns:
         fig (Plotly Figure): Updated figure with animation.
     """
-    static_traces = list(static_traces)
     plane_trace = []
     axis_traces = []
+    frame_titles = list(np.zeros(len(rotated_planes)))
+
 
     num_frames = len(rotated_planes)
 
@@ -312,47 +348,37 @@ def generate_arc_animation(fig, rotated_planes, static_traces, lines_traces):
         logging.debug(f"Preparing elements for frame {idx} for plane at position {plane.position}")
 
         # Get plane and axis traces
-        plane_trace.append(plane.planes_plot_3d(go.Figure(), "yellow").data[
-                               0])  # makes plane_trace[idx] type = "plotly.graph_objs._mesh3d.Mesh3d"
+        plane_trace.append(plane.planes_plot_3d(go.Figure(), "yellow").data[0])  # makes plane_trace[idx] type = "plotly.graph_objs._mesh3d.Mesh3d"
         axis_traces.append(list(plane.plot_axis(go.Figure()).data))  # makes axis_traces[idx] type = "tuple"
 
-    # Plane trace is type list, shape (length rotated_planes, )
-    # Plane trace [0] type: <class 'plotly.graph_objs._mesh3d.Mesh3d'>: shape ()
-    # Axis trace is type list, shape (length rotated_planes, 3)
-    # Axis trace [0] type: <class 'list'>: shape (3, )
-    # Line trace is type list, shape (length rotated_planes, 2)
-    # Line trace [0] type: <class 'list'>: shape (2, )
+        frame_titles[idx] = f"Position {idx} - Hits {results[idx][0]:.0f}, Misses {results[idx][1]:.0f} "
 
-    # Debug messages
-    debug_params = [plane_trace, axis_traces, lines_traces]
-    params_str = "plane_trace", "axis_traces", "lines_traces"
-    for i, param in enumerate(debug_params):
-        logging.debug(f"Param {params_str[i]} type: {type(param)}: shape {np.shape(param)}")
-        logging.debug(f"Param {params_str[i]} [0] type: {type(param[0])}: shape {np.shape(param[0])}")
+    # print("")
+    # # Debug messages
+    # debug_params = [plane_trace, axis_traces, lines_traces]
+    # params_str = "plane_trace", "axis_traces", "lines_traces"
+    # for i, param in enumerate(debug_params):
+    #     logging.debug(f"Param {params_str[i]} type: {type(param)}: shape {np.shape(param)}")
+    #     logging.debug(f"Param {params_str[i]} [0] type: {type(param[0])}: shape {np.shape(param[0])}")
 
-    # Prepare the actual frames
+    check_fig_data(fig)
+
+    for traces in fig.data:
+        fig.add_trace(traces)
+
+# Prepare the actual frames
     frames = [
         go.Frame(
             data=[
                 plane_trace[i],  # Single plane
                 *axis_traces[i],  # Three axis traces
                 *lines_traces[i],  # Two line traces
-                *static_traces
             ],
-            name=f"Frame {i}"
+            name=f"Frame {i}",
+            layout=go.Layout(title=frame_titles[i])
         )
         for i in range(num_frames)
     ]
-
-    check_fig_data(fig)
-
-    # Ensure frames are actually created
-    if not frames:
-        logging.error("No frames were generated for animation!")
-
-        # Ensure frames are actually created
-    if not frames:
-        logging.error("No frames were generated for animation!")
 
     # Add animation controls
     fig.update_layout(
@@ -378,10 +404,42 @@ def generate_arc_animation(fig, rotated_planes, static_traces, lines_traces):
             "xanchor": "right",
             "y": 0,
             "yanchor": "top"
+        }],
+        # Add a slider for manual frame selection
+        sliders=[{
+            "active": 0,
+            "yanchor": "top",
+            "xanchor": "left",
+            "currentvalue": {
+                "font": {"size": 16},
+                "prefix": "Position: ",
+                "visible": True,
+                "xanchor": "right"
+            },
+            "transition": {"duration": 300, "easing": "cubic-in-out"},
+            "pad": {"b": 10, "t": 50},
+            "len": 0.9,
+            "x": 0.1,
+            "y": 0,
+            "steps": [
+                {
+                    "args": [
+                        [f"Frame {k}"],
+                        {"frame": {"duration": 300, "redraw": True},
+                         "mode": "immediate",
+                         "transition": {"duration": 300}}
+                    ],
+                    "label": str(k),
+                    "method": "animate"
+                }
+                for k in range(num_frames)
+            ]
         }]
     )
 
+    # Set the frames to the figure
     fig.frames = frames
+
     return fig
 
 
@@ -413,16 +471,17 @@ def generate_static_arc_plot(fig, rotated_planes, line_objects):
     return fig
 
 
-def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, polar_positions):
+def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, secondary_axis, sequence_ID):
     """
     Moves the plane along a predefined arc while updating line positions.
 
     Args:
         plane (Plane): Plane in starting position.
         all_positions (list): Position vectors along the arc.
-        arc_angle (float): Rotation angle per step.
-        rotation_axis (str): Axis of rotation.
-        polar_positions (list): Polar coordinates for reference.
+        arc_angle (float): Rotation angle per step in radians.
+        rotation_axis (list): Axis of rotation.
+        secondary_axis (list): Polar coordinates for reference.
+        sequence_ID (int): Indicates type of movement sequence. (1 or 2)
 
     Returns:
         rotated_planes (list): Transformed plane objects at each step.
@@ -430,8 +489,8 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, polar_p
     """
 
     rotated_planes = []
-
-    initial_phi = polar_positions[0][2]  # Store initial phi angle
+    current_secondary = secondary_axis[0]  # Store initial secondary axis angle
+    meridian_start_index = 0  # Track where each meridian starts
 
     for idx, position in enumerate(all_positions):
         # Copy last plane position
@@ -442,38 +501,61 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, polar_p
             rotated_planes.append(new_plane)
             continue
         else:
-            new_plane = Plane(f"Step {idx}", rotated_planes[idx - 1].position,
-                              rotated_planes[idx - 1].direction, rotated_planes[idx - 1].width,
-                              rotated_planes[idx - 1].length)
-            # Overwrite newly generated local axes, preserving previous
-            new_plane.right, new_plane.up, new_plane.direction = rotated_planes[idx - 1].right, rotated_planes[
-                idx - 1].up, rotated_planes[idx - 1].direction
+            # Check if starting a new meridian (for vertical circles)
+            if sequence_ID == 1 and idx > 0 and secondary_axis[idx] != secondary_axis[idx-1]:
+                # Start a new meridian from a fresh orientation
+                meridian_start_index = idx
+                # Clone the original plane for a fresh start
+                new_plane = Plane(f"Step {idx}", plane.position, plane.direction, plane.width, plane.length)
+                new_plane.right, new_plane.up, new_plane.direction = plane.right, plane.up, plane.direction
 
-        # Compute transformation
-        translation_vector = arc_movement_vector(new_plane, position)
-        rotation_matrix = do_rotation(np.radians(arc_angle), "z")
+                # Apply initial setup for this meridian
+                # 1. Rotate around z-axis to the correct theta angle
+                theta_rotation = secondary_axis[idx]  # This should be the theta value for this meridian
+                new_plane.rotate_plane(do_rotation(np.radians(theta_rotation), "z"))
 
-        logging.debug(f"Beginning of arc movement {idx}")
-        logging.debug(
-            f"Current Position: [{new_plane.position[0]:.2f}, {new_plane.position[1]:.2f}, {new_plane.position[2]:.2f}]")
-        logging.debug(f"Next Position: [{position[0]:.2f}, {position[1]:.2f}, {position[2]:.2f}]\n")
+                # 2. Translate to the start position for this meridian
+                translation_vector = arc_movement_vector(new_plane, position)
+                new_plane.translate_plane(translation_vector)
+            else:
+                new_plane = Plane(f"Step {idx}", rotated_planes[idx - 1].position,
+                                  rotated_planes[idx - 1].direction, rotated_planes[idx - 1].width,
+                                  rotated_planes[idx - 1].length)
 
-        # Apply transformations
+                # Overwrite newly generated local axes, preserving previous
+                new_plane.right, new_plane.up, new_plane.direction = rotated_planes[idx - 1].right, rotated_planes[
+                    idx - 1].up, rotated_planes[idx - 1].direction
 
-        # Apply rotation to align with the origin in the z axis
-        logging.info(f"Rotating {arc_angle}° around z-axis")
-        new_plane.rotate_plane(rotation_matrix)
+                logging.debug(f"Beginning of arc movement {idx}")
 
-        # Check if next step requires additional rotation
-        if polar_positions[idx][2] != initial_phi:
-            logging.debug(f"Applying phi rotation")
-            correction_angle = initial_phi - polar_positions[idx][2]
-            new_plane.rotate_plane(do_rotation(-correction_angle, "y"))
-            initial_phi = polar_positions[idx][2]
+                # Compute translation
+                translation_vector = arc_movement_vector(new_plane, position)
 
-        # Apply translation
-        new_plane.translate_plane(translation_vector)
-        rotated_planes.append(new_plane)
+                # Apply rotation to align with the origin in the z axis
+                primary_axis = rotation_axis[0]
+                rotation_matrix = do_rotation(np.radians(arc_angle), primary_axis)
+                new_plane.rotate_plane(rotation_matrix)
+                logging.info(f"Rotating {arc_angle}° around {rotation_axis[0]}-axis")
+
+
+                # Check if secondary angle changed (requires additional rotation)
+                if secondary_axis[idx] != current_secondary:
+                    secondary_axis_type = rotation_axis[1]
+
+                    correction_angle = current_secondary - secondary_axis[idx]
+
+                    logging.debug(f"Since current {current_secondary} != {secondary_axis[idx]}")
+                    logging.info(f"Rotating {-correction_angle}° around {rotation_axis[1]}-axis")
+
+                    # correction_angle = 45
+                    new_plane.rotate_plane(do_rotation(np.radians(-correction_angle), secondary_axis_type))
+                    current_secondary = secondary_axis[idx]
+
+
+                # Apply translation
+                new_plane.translate_plane(translation_vector)
+
+            rotated_planes.append(new_plane)
 
     return rotated_planes
 
@@ -530,9 +612,9 @@ def visualise_intersections_seq(line):
 
 def check_fig_data(fig):
     logging.debug("\n")
-    # logging.debug(f"Number of traces before animation: {len(fig.data)}")
-    # for idx, trace in enumerate(fig.data):
-    #     logging.debug(f"Trace {idx}: Type = {type(trace)}, Name = {trace.name if hasattr(trace, 'name') else 'Unnamed'}")
+    logging.debug(f"Number of traces: {len(fig.data)}")
+    for idx, trace in enumerate(fig.data):
+        logging.debug(f"Trace {idx}: Type = {type(trace)}, Name = {trace.name if hasattr(trace, 'name') else 'Unnamed'}")
 
 
 @profile(stream=open("memory_profile.log", "w"))
@@ -548,7 +630,7 @@ def main():
         7. Displays the final 3D plot and prints the hit/miss results.
     """
     # ----- Step 1: Initialize planes and areas  ----- #
-    sensorPlane, sourcePlane, interPlane, sensorAreas, aperture_areas = initialise_planes_and_areas()
+    sensorPlane, sourcePlane, aperturePlane, sensorAreas, aperture_areas = initialise_planes_and_areas()
 
     # ----- Step 2: Create lines from source plane ----- #
     lines = create_lines_from_plane(sourcePlane, config.simulation["num_lines"])
@@ -561,16 +643,15 @@ def main():
         fig = visualise_environment(fig, sensorPlane, config.visualization["color_sensor_plane"])
     if config.visualization["show_source_plane"]:
         fig = visualise_environment(fig, sourcePlane, config.visualization["color_source_plane"])
-    if config.visualization["show_intermediate_plane"]:
-        fig = visualise_environment(fig, interPlane, config.visualization["color_intermediate_plane"])
+    if config.visualization["show_aperture_plane"]:
+        fig = visualise_environment(fig, aperturePlane, config.visualization["color_aperture_plane"])
     if config.visualization["show_sensor_area"]:
         for sensor in sensorAreas:  # Display all defined sensors on the plot
             fig = visualise_environment(fig, sensor, config.visualization["color_sensor_area"])
     if config.visualization["show_aperture_area"]:
         for aperture in aperture_areas:  # Display all defined apertures on the plot
             fig = visualise_environment(fig, aperture, config.visualization["color_aperture_area"])
-    fig.show()
-    exit(1)
+
     sensorPlane.title = "Parent axis"
     sensorPlane.print_pose()
 
@@ -583,13 +664,28 @@ def main():
     # -- Phase 1: Compute arc steps -- #
     # Gets all position P vectors for the plane as it rotates around arc
     # Increments first through arc_theta_angles, then phis
-    arc_phi_angle = np.arange(90, -config.arc_movement["arc_phi_step"], -config.arc_movement["arc_phi_step"])
-    # arc_phi_angle = [90]
+    horizontal_circles = 0
 
-    all_positions, all_positions_polar = rotation_rings(
-        arc_phi_angle,  # phi levels to the spherical arc
+    if horizontal_circles == 1:
+        arc_phi_angle = np.arange(90, -config.arc_movement["arc_phi_step"], -config.arc_movement["arc_phi_step"])
+        arc_theta_angle = config.arc_movement["arc_theta_angle"]
+        sequence_ID = 2  # 2 for horizontal circles movement
+        rotation_axis = ["z", "y"]
+        rotation_step = config.arc_movement["arc_theta_angle"]
+    else:
+        print("Vertical circles movement")
+        arc_phi_angle = 10
+        arc_theta_angle = [0, 45]
+        sequence_ID = 1  # 1 for vertical circles movement
+        rotation_axis = ["y", "z"]
+        rotation_step = -arc_phi_angle
+
+
+    all_positions, secondary_movement = rotation_rings(
+        sequence_ID,
         config.arc_movement["radius"],  # Radius of arc movement
-        config.arc_movement["arc_theta_angle"]  # steps of theta taken around the arc
+        arc_theta_angle,# steps of theta taken around the arc
+        arc_phi_angle  # phi levels to the spherical arc
     )
 
     # -- Phase 2: Move to first arc position -- #
@@ -606,24 +702,29 @@ def main():
         rotated_planes = move_plane_along_arc(
             start_pose_plane,
             all_positions,
-            config.arc_movement["arc_theta_angle"],
-            "z",
-            all_positions_polar,
+            rotation_step,
+            rotation_axis,
+            secondary_movement,
+            sequence_ID
         )
     else:
         rotated_planes = [start_pose_plane]
 
-    print(f"Checking lines")
-
     # #        ----- Step 6: Evaluate hits and visualize lines -----        #
+    logging.debug(f"Figure content evaluation")
     check_fig_data(fig)
     line_scatter_objects = []
+    results = np.zeros((len(rotated_planes), 2))
+
     for idx, plane in enumerate(rotated_planes):  # Check lines for each plane
         update_lines_global_positions(lines, plane)
         logging.debug(f"Checking intersections for plane {idx} {plane.title}")
-        hit, miss = evaluate_line_results(sensorPlane, sensorAreas, lines)
+        hit, miss = evaluate_line_results(sensorPlane, sensorAreas, aperturePlane, aperture_areas, lines)
         handle_results(sensorAreas)
-        logging.info(f"Plane {plane.title} has {hit} hits and {miss} misses")
+        logging.info(f"Plane {plane.title} has {hit} hits and {miss} misses \n")
+
+        results[idx, 0] = hit
+        results[idx, 1] = miss
 
         lines_for_plane = []
         for line in lines:
@@ -632,16 +733,16 @@ def main():
         line_scatter_objects.append(lines_for_plane)
 
     #        ----- Step 7: Display the plot and results -----        #
-
-    # show animation or static plot
-    if config.visualization["animated_plot"]:
-        fig = generate_arc_animation(fig, rotated_planes, fig.data, line_scatter_objects)
-    else:
-        fig = generate_static_arc_plot(fig, rotated_planes, line_scatter_objects)
-        logging.info("Static plot generated.")
-
     # Show any plot
     if config.visualization["show_output_parent"]:
+
+        # show animation or static plot
+        if config.visualization["animated_plot"]:
+            fig = generate_arc_animation(fig, rotated_planes, line_scatter_objects, results)
+        else:
+            fig = generate_static_arc_plot(fig, rotated_planes, line_scatter_objects)
+            logging.info("Static plot generated.")
+
         fig.show()
     else:
         logging.debug("Visualization disabled (show_output_parent = false).")

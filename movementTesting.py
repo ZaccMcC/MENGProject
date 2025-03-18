@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from arcRotation import arc_movement_coordinates
+from arcRotation import arc_movement_coordinates, rotation_rings, convert_to_cartesian
 
 
 def add_circle_ref(radius_circle):
@@ -70,21 +70,55 @@ add_circle_ref(radius)
 add_hemisphere(radius)
 
 # Define array of phi angles to generate points at
-phis = np.arange(90, -30, -30)  # Generate values for theta at each increment
-colours = ["b", "g", "b", "r"]
+phis = np.arange(90, -90, -30)  # Generate values for theta at each increment
+colours = ["b", "g", "r", "y","b", "g", "r", "y"]
+
+
+# arc_phi_angle = np.arange(90, -30, -30)
+# arc_theta_angle = 60
+# sequence_ID = 0
+
+arc_theta_angle = np.arange(90, -30, -30)
+arc_phi_angle = 60
+sequence_ID = 1
+
+
+phis = np.arange(90, -120, -30)
+theta = np.zeros(len(phis))
+r = np.ones(len(phis)) * radius
+
+print(f"Phi: {phis} shape = {phis.shape}")
+print(f"Theta: {theta}")
+print(f"R: {r}")
+
+
+
 
 # Make a loop through each phi angle
 i = 0
-for phi_angles in phis:
+for idx, phi_angles in enumerate(phis):
     # Returns coordinates around circle
-    list_point, allPositions_polar = arc_movement_coordinates(radius, arc_angle, phi_angles)
+
+
+    # all_positions, all_positions_polar = rotation_rings(
+    #     sequence_ID,
+    #     radius,  # Radius of arc movement
+    #     arc_theta_angle,# steps of theta taken around the arc
+    #     arc_phi_angle  # phi levels to the spherical arc
+    # )
+
+    cartesian_coords = convert_to_cartesian(r[idx], np.radians(theta[idx]), np.radians(phi_angles))
+    all_positions = [tuple(cartesian_coords)]  # Convert to a list of one tuple
+
+
+
     print(f"For current phi angle: {phi_angles}")
 
     arc_radius = radius * np.sin(np.radians(phi_angles))
     print(f"Arc radius: {round(arc_radius,2)}")
 
     # Add points to ax from cartesian points list
-    plot_cords_mat(ax, list_point, colours[i], f"Level: {i} φ: {phi_angles}")
+    plot_cords_mat(ax, all_positions, colours[i], f"Level: {i} φ: {phi_angles}")
 
     i = i + 1
 

@@ -12,7 +12,7 @@
       "width": 10,
       "length": 10
     },
-    "intermediate_plane": {
+    "aperture_plane": {
       "position": [0, 0, 1],
       "direction": [0, 0, 1],
       "width": 5,
@@ -61,7 +61,7 @@
     "arc_phi_step": 30
   },
   "simulation": {
-    "num_lines": 2
+    "num_lines": 1
   },
   "intersection": {
     "max_distance": 100,
@@ -74,10 +74,10 @@
     "show_source_plane": false,
     "show_sensor_area": true,
     "show_aperture_area": true,
-    "show_intermediate_plane": false,
+    "show_aperture_plane": false,
     "color_sensor_plane": "red",
     "color_source_plane": "yellow",
-    "color_intermediate_plane": "green",
+    "color_aperture_plane": "green",
     "color_sensor_area": "green",
     "color_aperture_area": "black",
     "show_axes": true,
