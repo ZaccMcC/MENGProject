@@ -41,6 +41,9 @@ class Plane:
 
         # Compute initial corners using the local frame
         self.update_corners()
+
+        # Definable colours
+        self.colour = None
         # print(f"\n {self.title} Corners after initial definition: {self.corners}")
 
     def update_corners(self):

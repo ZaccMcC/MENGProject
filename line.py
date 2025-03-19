@@ -9,7 +9,7 @@ class Line:
         Initializes a line with its position relative to a plane.
 
         Args:
-            local_position (array): The position of the line in the plane's local coordinate system.
+            local_position (list): The position of the line in the plane's local coordinate system.
             direction (array): The initial direction (same as plane's normal).
         """
         self.line_id = line_id

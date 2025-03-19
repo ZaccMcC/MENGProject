@@ -168,6 +168,8 @@ def evaluate_line_results(sensorPlane, sensorArea, aperturePlane, apertureAreas,
     Args:
         sensorPlane: The plane intersecting with the lines.
         sensorArea: List of all sensor objects - target areas to evaluate hits.
+        aperturePlane:
+        apertureAreas:
         lines: List of Line objects.
 
     Returns:
@@ -176,7 +178,6 @@ def evaluate_line_results(sensorPlane, sensorArea, aperturePlane, apertureAreas,
     """
     hit = 0
     miss = 0
-    result = None
 
     # Reset previous sensor illumination values
     for sensors in sensorArea:
@@ -333,6 +334,7 @@ def generate_arc_animation(fig, rotated_planes, lines_traces, results):
         fig (Plotly Figure): The figure used for visualization.
         rotated_planes (list): The list of planes from move_plane_along_arc().
         lines_traces (list): List of Line objects for each plane.
+        results:
     Returns:
         fig (Plotly Figure): Updated figure with animation.
     """
@@ -490,7 +492,7 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, seconda
 
     rotated_planes = []
     current_secondary = secondary_axis[0]  # Store initial secondary axis angle
-    meridian_start_index = 0  # Track where each meridian starts
+    # meridian_start_index = 0  # Track where each meridian starts
 
     for idx, position in enumerate(all_positions):
         # Copy last plane position
@@ -504,7 +506,7 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, seconda
             # Check if starting a new meridian (for vertical circles)
             if sequence_ID == 1 and idx > 0 and secondary_axis[idx] != secondary_axis[idx-1]:
                 # Start a new meridian from a fresh orientation
-                meridian_start_index = idx
+                # meridian_start_index = idx
                 # Clone the original plane for a fresh start
                 new_plane = Plane(f"Step {idx}", plane.position, plane.direction, plane.width, plane.length)
                 new_plane.right, new_plane.up, new_plane.direction = plane.right, plane.up, plane.direction
@@ -514,6 +516,9 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, seconda
                 theta_rotation = secondary_axis[idx]  # This should be the theta value for this meridian
 
                 new_plane.rotate_plane(do_rotation(theta_rotation, "z"))
+
+                # Update new secondary axis
+                current_secondary = secondary_axis[idx]
 
                 # 2. Translate to the start position for this meridian
                 translation_vector = arc_movement_vector(new_plane, position)
@@ -537,7 +542,6 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, seconda
                 new_plane.rotate_plane(rotation_matrix)
                 logging.info(f"Rotating {arc_angle}° around {rotation_axis[0]}-axis")
 
-
                 # Check if secondary angle changed (requires additional rotation)
                 if secondary_axis[idx] != current_secondary:
                     correction_angle = current_secondary - secondary_axis[idx]
@@ -549,10 +553,10 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, seconda
                     new_plane.rotate_plane(do_rotation(-correction_angle, rotation_axis[1]))
                     current_secondary = secondary_axis[idx]
 
-
                 # Apply translation
                 new_plane.translate_plane(translation_vector)
 
+            print(f"Appending plane {idx}")
             rotated_planes.append(new_plane)
 
     return rotated_planes
