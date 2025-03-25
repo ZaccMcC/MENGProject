@@ -77,15 +77,15 @@ def get_arc_coordinates(sequence_ID, radius, constant_angle, stepping_angle):
 
     :return:
     """
-    print(f"Arc get_polar_coordinates: radius = {radius}, theta = {constant_angle}, phi = {stepping_angle}")
-    print(f"Sequence ID: {sequence_ID} type = {type(sequence_ID)}")
     # Holds the output angles
     cartesianCoords = []
     polarCoords = []
 
-    if sequence_ID == 2:  # Vary theta, at constant phi
+    if sequence_ID == 2:  # Vary theta, at constant phi: angle_steps = {angle_steps}
+
         # Define angle steps
         angle_steps = np.arange(0, 360, stepping_angle)
+        logging.debug(f"Angle steps: {angle_steps}")
         print(f"Vary theta, at constant phi: angle_steps = {angle_steps}")
 
         for steps in angle_steps:
@@ -98,9 +98,8 @@ def get_arc_coordinates(sequence_ID, radius, constant_angle, stepping_angle):
             # Convert polar form to cartesian form
             cartesianCoords.append(convert_to_cartesian(polar[0], polar[1], polar[2]))
 
-    if sequence_ID == 1:  # Vary phi, at constant theta
+    if sequence_ID == 1:  # Vary phi, at constant theta: angle_steps = {angle_steps}
         angle_steps = np.arange(90, -90, -stepping_angle)
-        print(f"Vary phi, at constant theta: angle_steps = {angle_steps}")
 
         for steps in angle_steps:
             # For varying phi: [radius, theta (constant), phi (varying)]
@@ -117,14 +116,18 @@ def get_arc_coordinates(sequence_ID, radius, constant_angle, stepping_angle):
 
 def rotation_rings(sequence_ID, radius, angle_theta, angle_phi):
     """
-
+    Create a list of points around the arc rotation, and return cartesian coordinates for each position.
+    Directly generate list of secondary angles for arc rotation, and return cartesian coordinates for each position.
     """
     all_points = []
     allPositions_polar = []
     i = 0
 
     if sequence_ID == 2: # Get variations of theta, for each value of phi
+        logging.debug(f"Phi angles {angle_phi}")
+
         for phi_angles in angle_phi:
+
             # Returns coordinates around circle
             list_point, list_points_polar = get_arc_coordinates(sequence_ID, radius, phi_angles, angle_theta)
 
@@ -133,9 +136,12 @@ def rotation_rings(sequence_ID, radius, angle_theta, angle_phi):
             allPositions_polar.extend(list_points_polar)
 
             logging.debug(f"For phi angle {phi_angles}, generated {len(list_point)} points")
+
             i = i + 1
+
     if sequence_ID == 1:
         for theta_angles in angle_theta:
+
             # Returns coordinates around circle
             list_point, list_points_polar = get_arc_coordinates(sequence_ID, radius, theta_angles, angle_phi)
 

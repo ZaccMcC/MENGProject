@@ -58,7 +58,10 @@
     "rotation_axis": "y",
     "radius": 10,
     "arc_theta_angle": 60,
-    "arc_phi_step": 30
+    "arc_phi_step": 30,
+    "horizontal_circles": false,
+    "arc_phi_angle": 10,
+    "arc_theta_step": 45
   },
   "simulation": {
     "num_lines": 1
@@ -86,7 +89,7 @@
   },
   "debugging": {
     "enable_logging": true,
-    "logging_level": "DEBUG"
+    "logging_level": "debug"
   },
   "performance": {
     "enable_memory_profiling": true,

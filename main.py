@@ -244,7 +244,6 @@ def do_rotation(theta, axis):
         The rotation matrix for the specified axis and angle.
     """
 
-    # theta = np.radians(degrees)
     if axis == "x":
         R = np.array([
             [1, 0, 0],
@@ -267,6 +266,25 @@ def do_rotation(theta, axis):
         print("Invalid axis")
         R = np.array([1, 1, 1])
     return R
+
+
+def rotation_test(angle, axis, vectors):
+    """
+    Test function for rotation matrix.
+    :param angle:
+    :param axis:
+    :param vectors:
+    :return:
+        Print rotation matrix.
+    """
+
+    rotation_matrix = do_rotation(angle, axis)
+
+    # print(f"Rotation matrix for {axis} axis: \n{rotation_matrix}")
+    print(f"Rotation about {axis} axis by {np.degrees(angle)}° {angle} rad")
+    for vector in vectors:
+        rotated_vector = np.dot(rotation_matrix, vector)
+        print(f"{vector} rotated -> {np.round(rotated_vector, 2)}")
 
 
 def setup_initial_pose(source_plane, theta, rotation_axis, all_positions):
@@ -305,7 +323,7 @@ def setup_initial_pose(source_plane, theta, rotation_axis, all_positions):
     start_pose_plane.print_pose()
 
     # Set position to the first computed arc position instead of translating manually
-    print(f"Moving to initial arc position: {all_positions[0]}")
+    logging.info(f"Moving to initial arc position: {np.round(all_positions[0],2)}")
 
     # start_pose_plane.position = np.array(all_positions[0])
 
@@ -473,17 +491,166 @@ def generate_static_arc_plot(fig, rotated_planes, line_objects):
     return fig
 
 
-def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, secondary_axis, sequence_ID):
+def plane_pose_initialisation(original_plane):
+    """
+    Creates a copied plane object for initial pose.
+    :arg:
+        original_plane: Plane object to be copied.
+    :return:
+        new_plane: Copied plane object.
+    """
+    new_plane = Plane(f"New plane", original_plane.position, original_plane.direction, original_plane.width, original_plane.length)
+    new_plane.right, new_plane.up, new_plane.direction = original_plane.right, original_plane.up, original_plane.direction
+
+    return new_plane
+
+
+def calculate_rotation_matrix(position, direction):
+    """
+    Takes input position and direction to calculate arbitrary rotation matrix.
+    Using Rodrigues' rotation formula.
+    :arg:
+        position (3x1 matrix): Position vector.
+        direction (3x1 matrix): Direction vector.
+        idx (int): Plane index. Used for logging.
+    :return:
+        R (3x3 matrix): Rotation matrix.
+        required_angle (float): Angle (rad) of rotation in calculated arbitrary rotation matrix.
+    """
+
+    logging.info("Calculating new rotation matrix")
+    # Calculate target local z axis
+    target_z = np.array([0,0,0]) - position
+    # Normalized z-direction
+    target_z_norm = target_z / np.linalg.norm(target_z, keepdims=True)
+
+
+    # Calculate axis of rotation
+    required_rotation_axis = np.cross(direction, target_z_norm)
+    normalised_axis = required_rotation_axis / np.linalg.norm(required_rotation_axis, keepdims=True)
+
+    # Calculate angle of rotation
+    required_angle = np.arccos(np.clip(np.dot(direction, target_z_norm), -1.0, 1.0))
+
+
+    ## Apply Rodrigues' rotation formula
+    # Compute skew-symmetric cross-product matrix of rotation_axis
+    K = np.array([
+        [0, -normalised_axis[2], normalised_axis[1]],
+        [normalised_axis[2], 0, -normalised_axis[0]],
+        [-normalised_axis[1], normalised_axis[0], 0]
+    ])
+
+    # Rodrigues' rotation formula
+    R = (
+            np.eye(3) +
+            np.sin(required_angle) * K +
+            (1 - np.cos(required_angle)) * np.dot(K, K)
+    )
+
+    return R, required_angle
+
+
+def determine_movement_type(idx, sequence_ID, secondary_angle):
+    """
+    Checks for movement type
+    Simplified logic from previous implementation
+    :arg:
+        idx (int): Plane index. Used for logging.
+        sequence_ID (int): Indicates type of movement sequence. (2 = horizontal circles, or 1 = vertical circles)
+        secondary_angle (list): Contains list of angles (ID = 2/1, theta/phi) from the polar coordinates of each position.
+    :return:
+        1 = First position
+        2 = Horizontal circles
+        3 = Same meridian
+        4 = Different meridian
+
+        None = Problem
+    """
+    if idx == 0:
+        # First position
+        return 1
+    elif sequence_ID == 2:
+        # Horizontal circles
+        return 3
+    elif sequence_ID == 1:
+        # Vertical circles
+        if secondary_angle[idx-1] == secondary_angle[idx]:
+            # Same meridian
+            return 3
+        else:
+            # Different meridian
+            return 2
+
+    return None
+
+
+def initialise_new_circle(plane, position):
+    """
+    Creates a copy of a plane, calculates translation vector and applies it to the plane, moving it to the next position.
+
+    :arg:
+        plane (Plane): Plane object.
+        position (3x1 matrix): Position vector.
+        direction (3x1 matrix): Direction vector.
+        idx (int): Plane index. Used for logging.
+    :return:
+    """
+    # Create copy of a plane
+    new_plane = plane_pose_initialisation(plane)
+
+    # Calculate new translation vector
+    translation_vector = arc_movement_vector(new_plane, position)
+
+    # Apply translation
+    new_plane.translate_plane(translation_vector)
+
+    return new_plane
+
+
+def primary_rotation_handling(sequence_ID, new_plane, next_position, required_angle, rotation_axis):
+    """
+    Handles the differing primary rotation mechanisms depending on type of movement sequence.
+        For vertical circles, the primary rotation matrix has to be generated for each new circle (about arbitrary axis).
+        For horizontal circles, the primary rotation matrix is standard about a defined axis.
+
+    :return:
+        primary_axis
+        required_angle
+        plane (object)
+    """
+    R_p = None
+    # required_angle = None
+
+    if sequence_ID == 1: # Vertical circles
+        R_p, required_angle = calculate_rotation_matrix(next_position, new_plane.direction)
+        logging.info(f"Required angle for new primary rotations: {np.round(np.degrees(required_angle),2)}° about arbitrary axis")
+
+    elif sequence_ID == 2: # Horizontal circles
+        # Apply rotation to align with the origin in the z axis
+        R_p = do_rotation(required_angle, rotation_axis[0])
+        logging.info(f"Rotating {np.round(np.degrees(required_angle),2)}° around {rotation_axis[0]}-axis")
+
+    return R_p, required_angle, new_plane
+
+
+def move_plane_along_arc(start_plane, all_positions, primary_angle, rotation_axis, secondary_angle, sequence_ID):
     """
     Moves the plane along a predefined arc while updating line positions.
 
     Args:
-        plane (Plane): Plane in starting position.
-        all_positions (list): Position vectors along the arc.
-        arc_angle (float): Rotation angle per step in radians.
-        rotation_axis (list): Axis of rotation.
-        secondary_axis (list): Polar coordinates for reference.
-        sequence_ID (int): Indicates type of movement sequence. (1 or 2)
+        start_plane (Plane): A plane object representing the initial position and orientation.
+
+        all_positions (list): A list of position vectors [x, y, z] corresponding to the points along the arc where the plane will be moved.
+            Each item in this list represents a point in 3D space.
+
+        primary_angle (float): Rotation angle applied at each step (radians) by which to increment the plane's orientation.
+
+        rotation_axis (list): Specifies the axes about which the planes rotate at each step.
+
+        secondary_angle (list): Contains list of angles (theta / phi, where ID = 2/1) from the polar coordinates of each position.
+
+        sequence_ID (int): Indicates type of movement sequence. (2 = horizontal circles, or 1 = vertical circles)
 
     Returns:
         rotated_planes (list): Transformed plane objects at each step.
@@ -491,73 +658,88 @@ def move_plane_along_arc(plane, all_positions, arc_angle, rotation_axis, seconda
     """
 
     rotated_planes = []
-    current_secondary = secondary_axis[0]  # Store initial secondary axis angle
-    # meridian_start_index = 0  # Track where each meridian starts
 
+    R_p = None
+
+    logging.info(f"All secondary angle: {np.round(np.degrees(secondary_angle),2)}°")
+    # exit(2)
     for idx, position in enumerate(all_positions):
-        # Copy last plane position
-        if idx == 0:
-            new_plane = Plane(f"Step {idx}", plane.position, plane.direction, plane.width, plane.length)
-            new_plane.right, new_plane.up, new_plane.direction = plane.right, plane.up, plane.direction
+        logging.info("")
+        logging.info(f"Beginning of arc movement {idx}")
 
-            rotated_planes.append(new_plane)
-            continue
+        movement_type = determine_movement_type(idx, 1, secondary_angle)
+
+        logging.info(f"Movement type: {movement_type}")
+        # Movement types:
+            # 1 = First position
+            # 2 = Horizontal circles
+            # 3 = Same meridian
+            # 4 = Different meridian
+        logging.info(f"Current secondary angle: {np.round(np.degrees(secondary_angle[idx]),2)}°")
+
+        if movement_type is None:
+            logging.error(f"Error: Unable to determine movement type for position {idx}")
+            return None
+
+        elif movement_type == 1:
+
+            logging.info(f"Step {idx}: First position")
+
+            # Create copy of original plane and translate it to new position
+            new_plane = initialise_new_circle(start_plane, position)
+            new_plane.title = f"Plane {idx} - New Circle"
+
+            # Set primary rotation matrix
+            R_p = do_rotation(primary_angle, rotation_axis[0])
+
+            logging.debug(f"Primary rotation matrix set by {np.round(np.degrees(primary_angle), 2)}° / {np.round(primary_angle, 2)} rad about {rotation_axis[0]}-axis")
+            logging.debug(f"Primary matrix: \n{np.round(R_p,2)} \n")
+
+
+        elif movement_type == 2:
+
+            logging.info(f"Step {idx}: Different meridian")
+
+            # Create copy of original plane and translate it to new position
+            new_plane = initialise_new_circle(start_plane, position)
+            new_plane.title = f"Plane {idx} - New Circle"
+
+            secondary_rotation_angle = secondary_angle[idx]
+            logging.debug(f"Current secondary angle {np.round(np.degrees(secondary_angle[idx]),2)}° previous {np.round(np.degrees(secondary_angle[idx-1]),2)}°")
+
+            # Get secondary rotation matrix
+            R_s = do_rotation(secondary_rotation_angle, rotation_axis[1])
+
+            # Apply secondary rotation matrix
+            new_plane.rotate_plane(R_s)
+
+            logging.debug(f"Secondary rotation {np.round(np.degrees(secondary_rotation_angle),2)}° around {rotation_axis[1]}-axis applied")
+
+            # Generate primary rotation matrix
+            R_p, required_angle, new_plane = primary_rotation_handling(sequence_ID, new_plane, all_positions[idx+1], primary_angle, rotation_axis)
+            primary_angle = required_angle
+
+            logging.debug(f"Primary matrix: \n{np.round(R_p,2)} \n")
+
         else:
-            # Check if starting a new meridian (for vertical circles)
-            if sequence_ID == 1 and idx > 0 and secondary_axis[idx] != secondary_axis[idx-1]:
-                # Start a new meridian from a fresh orientation
-                # meridian_start_index = idx
-                # Clone the original plane for a fresh start
-                new_plane = Plane(f"Step {idx}", plane.position, plane.direction, plane.width, plane.length)
-                new_plane.right, new_plane.up, new_plane.direction = plane.right, plane.up, plane.direction
 
-                # Apply initial setup for this meridian
-                # 1. Rotate around z-axis to the correct theta angle
-                theta_rotation = secondary_axis[idx]  # This should be the theta value for this meridian
+            logging.info(f"Step {idx}: Same meridian")
 
-                new_plane.rotate_plane(do_rotation(theta_rotation, "z"))
+            # Create copy of previous plane and translate it to new position
+            new_plane = initialise_new_circle(rotated_planes[idx-1], position)
+            new_plane.title = f"Plane {idx}"
 
-                # Update new secondary axis
-                current_secondary = secondary_axis[idx]
+            logging.debug(f"Plane {idx} initial direction: {np.round(new_plane.direction,2)}")
 
-                # 2. Translate to the start position for this meridian
-                translation_vector = arc_movement_vector(new_plane, position)
-                new_plane.translate_plane(translation_vector)
-            else:
-                new_plane = Plane(f"Step {idx}", rotated_planes[idx - 1].position,
-                                  rotated_planes[idx - 1].direction, rotated_planes[idx - 1].width,
-                                  rotated_planes[idx - 1].length)
+            # Apply rotation
+            new_plane.rotate_plane(R_p)
+            logging.info(f"Plane {idx}: Applying primary rotation {np.round(np.degrees(primary_angle),2)}°")
+            logging.debug(f"Plane {idx} rotated direction: {np.round(new_plane.direction,2)}")
 
-                # Overwrite newly generated local axes, preserving previous
-                new_plane.right, new_plane.up, new_plane.direction = rotated_planes[idx - 1].right, rotated_planes[
-                    idx - 1].up, rotated_planes[idx - 1].direction
+        # Append new plane from ANY above ^^^^
+        rotated_planes.append(new_plane)
 
-                logging.debug(f"Beginning of arc movement {idx}")
-
-                # Compute translation
-                translation_vector = arc_movement_vector(new_plane, position)
-
-                # Apply rotation to align with the origin in the z axis
-                rotation_matrix = do_rotation(arc_angle, rotation_axis[0])
-                new_plane.rotate_plane(rotation_matrix)
-                logging.info(f"Rotating {arc_angle}° around {rotation_axis[0]}-axis")
-
-                # Check if secondary angle changed (requires additional rotation)
-                if secondary_axis[idx] != current_secondary:
-                    correction_angle = current_secondary - secondary_axis[idx]
-
-                    logging.debug(f"Since plane {idx} secondary {current_secondary} != {secondary_axis[idx]}")
-                    logging.info(f"Rotating {-correction_angle}° around {rotation_axis[1]}-axis")
-
-                    # correction_angle = 45
-                    new_plane.rotate_plane(do_rotation(-correction_angle, rotation_axis[1]))
-                    current_secondary = secondary_axis[idx]
-
-                # Apply translation
-                new_plane.translate_plane(translation_vector)
-
-            print(f"Appending plane {idx}")
-            rotated_planes.append(new_plane)
+        new_plane.print_pose()
 
     return rotated_planes
 
@@ -666,21 +848,28 @@ def main():
     # -- Phase 1: Compute arc steps -- #
     # Gets all position P vectors for the plane as it rotates around arc
     # Increments first through arc_theta_angles, then phis
-    horizontal_circles = 0
+    horizontal_circles = config.arc_movement["horizontal_circles"]
 
     if horizontal_circles == 1:
+        logging.info("Horizontal circles movement")
         arc_phi_angle = np.arange(90, -config.arc_movement["arc_phi_step"], -config.arc_movement["arc_phi_step"])
         arc_theta_angle = config.arc_movement["arc_theta_angle"]
         sequence_ID = 2  # 2 for horizontal circles movement
         rotation_axis = ["z", "y"]
         rotation_step = np.radians(config.arc_movement["arc_theta_angle"])
     else:
-        print("Vertical circles movement")
+        logging.info("Vertical circles movement")
         arc_phi_angle = 10
         arc_theta_angle = [0, 45]
         sequence_ID = 1  # 1 for vertical circles movement
         rotation_axis = ["y", "z"]
         rotation_step = np.radians(-arc_phi_angle)
+
+    # Display simulation parameters
+    logging.info(f"Arc phi angles: {arc_phi_angle}")
+    logging.info(f"Arc theta angles: {arc_theta_angle}")
+    logging.info(f"Rotation step: {np.round(np.degrees(rotation_step), 2)}")
+    logging.info(f"Rotation axis: {rotation_axis}")
 
 
     all_positions, secondary_movement = rotation_rings(
@@ -690,6 +879,7 @@ def main():
         arc_phi_angle  # phi levels to the spherical arc
     )
 
+
     # -- Phase 2: Move to first arc position -- #
     start_pose_plane = setup_initial_pose(
         sourcePlane,
@@ -697,6 +887,12 @@ def main():
         config.arc_movement["rotation_axis"],
         all_positions
     )
+
+    # Correct form of secondary movement for horizontal circles
+    if sequence_ID == 2:
+        reference_angle = secondary_movement[0]
+        secondary_movement -= reference_angle # sets the secondary angle to the starting position (not abs)
+
 
     # -- Phase 3: Apply the plane along the arc -- #
     # Move plane along arc and update lines
