@@ -1,3 +1,5 @@
+from memory_profiler import profile
+import random
 from arcRotation import arc_movement_vector, rotation_rings
 from intersectionCalculations import intersection_wrapper  # Import for calculating line-plane intersection
 from line import Line  # Import for Line object
@@ -6,11 +8,8 @@ from areas import Areas  # Import for target areas
 import numpy as np  # For mathematical operations
 import plotly.graph_objects as go  # For 3D visualization
 
-from memory_profiler import profile
-
 import logging
 from config import config
-
 
 # Valid logging levels "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
 
@@ -149,7 +148,7 @@ def intersection_checking(targetArea, intersection_coordinates):
     for target in targetArea:
         # Check if the intersection point is in the target area
         result = target.record_result(intersection_coordinates)
-        logging.debug(f"Checking intersection with {target.title}...")
+        # logging.debug(f"Checking intersection with {target.title}...")
 
         if result == 1: # Hit occurs
             return 1, target
@@ -178,6 +177,8 @@ def evaluate_line_results(sensorPlane, sensorArea, aperturePlane, apertureAreas,
     """
     hit = 0
     miss = 0
+    hit_list = []
+    miss_list = []
 
     # Reset previous sensor illumination values
     for sensors in sensorArea:
@@ -190,30 +191,37 @@ def evaluate_line_results(sensorPlane, sensorArea, aperturePlane, apertureAreas,
         # Set intersection coordinate of line object
         line.intersection_coordinates = aperture_intersection_coordinates
 
-        logging.debug(f"Checking line {line.line_id} intersection with apertures...")
+
         # Check if intersection with apertures
         aperture_intersection, _ = intersection_checking(apertureAreas, aperture_intersection_coordinates)
         if aperture_intersection == 1: # Hit, at apertures
-            logging.debug(f"Line {line.line_id} hit apertures")
+
             # Get intersection coordinates with sensor plane
             sensor_intersection_coordinates = intersection_wrapper(sensorPlane, line)
+
             # Check intersection with sensor areas
             sensor_intersection, sensor = intersection_checking(sensorArea, sensor_intersection_coordinates)
             line.intersection_coordinates = sensor_intersection_coordinates
+
             if sensor_intersection == 1: # Intersection occurs at sensor
                 hit, line.result, sensor.illumination = hit + 1, 1, sensor.illumination + 1
 
-                # logging.debug(f"Line {line.line_id} hit {sensor.title}")
+                hit_list.append(line.line_id)
+
                 continue  # Move to next line
             if sensor_intersection == 0:
                 miss += 1
+
+                miss_list.append(line.line_id)
+
                 continue
         else:
-            logging.debug(f"Line {line.line_id} missed apertures")
+
             miss += 1
+            miss_list.append(line.line_id)
             continue
 
-    return hit, miss
+    return hit, miss, hit_list, miss_list
 
 
 def handle_results(sensor_objects):
@@ -373,15 +381,7 @@ def generate_arc_animation(fig, rotated_planes, lines_traces, results):
 
         frame_titles[idx] = f"Position {idx} - Hits {results[idx][0]:.0f}, Misses {results[idx][1]:.0f} "
 
-    # print("")
-    # # Debug messages
-    # debug_params = [plane_trace, axis_traces, lines_traces]
-    # params_str = "plane_trace", "axis_traces", "lines_traces"
-    # for i, param in enumerate(debug_params):
-    #     logging.debug(f"Param {params_str[i]} type: {type(param)}: shape {np.shape(param)}")
-    #     logging.debug(f"Param {params_str[i]} [0] type: {type(param[0])}: shape {np.shape(param[0])}")
-
-    check_fig_data(fig)
+    # check_fig_data(fig)
 
     for traces in fig.data:
         fig.add_trace(traces)
@@ -484,7 +484,7 @@ def generate_static_arc_plot(fig, rotated_planes, line_objects):
 
         fig = plane.plot_axis(fig)  # Adds axis vectors
 
-        logging.debug(f"Adding line traces for plane {idx}")
+        # logging.debug(f"Adding line traces for plane {idx}")
         for line in line_objects[idx]:
             fig.add_trace(line)
 
@@ -801,6 +801,44 @@ def check_fig_data(fig):
         logging.debug(f"Trace {idx}: Type = {type(trace)}, Name = {trace.name if hasattr(trace, 'name') else 'Unnamed'}")
 
 
+def prepare_line_samples(lines, line_list, sample_size):
+    """
+    Samples list of lines for visualisation
+    Returns graphic objects of random lines
+
+    :arg:
+        lines: List of Line objects
+        line_list: line_id list
+        sample_size: Number of lines to be selected
+    :return:
+    """
+
+    # exit(2)
+
+    lines_graphics = []
+    # Validate sample size
+
+    if line_list is None or len(line_list) == 0:
+        logging.warning("No lines to sample.")
+        return None
+
+    logging.debug(f"Sample size: {sample_size}")
+    logging.debug(f"Number of lines: {len(line_list)}")
+
+    if sample_size > len(line_list):
+        logging.warning(f"Sample size {sample_size} is larger than number of lines {len(line_list)}.")
+        sample_size = len(line_list)
+
+    # Extract samples
+    sampled_lines = random.sample(line_list, sample_size)
+
+    for samples in sampled_lines:
+        lines_graphics.append(visualise_intersections_seq(lines[samples]))  # Stores line objects
+
+    logging.debug(f"Returning {len(lines_graphics)} lines for visualisation.")
+    return lines_graphics
+
+
 @profile(stream=open("memory_profile.log", "w"))
 def main():
     """
@@ -853,17 +891,17 @@ def main():
     if horizontal_circles == 1:
         logging.info("Horizontal circles movement")
         arc_phi_angle = np.arange(90, -config.arc_movement["arc_phi_step"], -config.arc_movement["arc_phi_step"])
-        arc_theta_angle = config.arc_movement["arc_theta_angle"]
+        arc_theta_angle = config.arc_movement["arc_theta_angle"] # Secondary rotation
         sequence_ID = 2  # 2 for horizontal circles movement
         rotation_axis = ["z", "y"]
-        rotation_step = np.radians(config.arc_movement["arc_theta_angle"])
+        rotation_step = np.radians(config.arc_movement["arc_theta_angle"]) # Secondary rotation
     else:
         logging.info("Vertical circles movement")
-        arc_phi_angle = 10
-        arc_theta_angle = [0, 45]
+        arc_phi_angle = 10 # Secondary rotation
+        arc_theta_angle = [0, 60]
         sequence_ID = 1  # 1 for vertical circles movement
         rotation_axis = ["y", "z"]
-        rotation_step = np.radians(-arc_phi_angle)
+        rotation_step = np.radians(-arc_phi_angle) # Secondary rotation
 
     # Display simulation parameters
     logging.info(f"Arc phi angles: {arc_phi_angle}")
@@ -910,25 +948,39 @@ def main():
 
     # #        ----- Step 6: Evaluate hits and visualize lines -----        #
     logging.debug(f"Figure content evaluation")
-    check_fig_data(fig)
+    # check_fig_data(fig)
     line_scatter_objects = []
     results = np.zeros((len(rotated_planes), 2))
 
     for idx, plane in enumerate(rotated_planes):  # Check lines for each plane
         update_lines_global_positions(lines, plane)
-        logging.debug(f"Checking intersections for plane {idx} {plane.title}")
-        hit, miss = evaluate_line_results(sensorPlane, sensorAreas, aperturePlane, aperture_areas, lines)
-        handle_results(sensorAreas)
-        logging.info(f"Plane {plane.title} has {hit} hits and {miss} misses \n")
+        logging.debug(f"\n\nChecking intersections: {plane.title}")
+        hit, miss, hit_list, miss_list = evaluate_line_results(sensorPlane, sensorAreas, aperturePlane, aperture_areas, lines)
+        # handle_results(sensorAreas)
+        logging.info(f"Plane {plane.title} has {hit} hits and {miss} misses")
 
         results[idx, 0] = hit
         results[idx, 1] = miss
 
+        ## Sample lines for visualisation
+        logging.debug(f"Selecting hits for visualisation for plane {idx}")
         lines_for_plane = []
-        for line in lines:
-            lines_for_plane.append(visualise_intersections_seq(line))  # Stores line objects for current plane
+
+        hits_visualised = (prepare_line_samples(lines, hit_list, config.visualization["hits_to_display"]))
+
+        if hits_visualised is not None:
+            lines_for_plane.extend(hits_visualised)
+
+        logging.debug(f"Selecting misses for visualisation for plane {idx}")
+        misses_visualised = (prepare_line_samples(lines, miss_list, config.visualization["misses_to_display"]))
+
+        if misses_visualised is not None:
+            lines_for_plane.extend(misses_visualised)
+
         # Stores line objects for all planes
         line_scatter_objects.append(lines_for_plane)
+        logging.debug(f"Line scatter objects: {type(line_scatter_objects)} length {len(line_scatter_objects)}")
+
 
     #        ----- Step 7: Display the plot and results -----        #
     # Show any plot
@@ -950,3 +1002,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
