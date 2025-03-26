@@ -1,134 +1,134 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from arcRotation import convert_to_cartesian, arc_movement_coordinates
-from main import initialise_planes_and_areas, create_lines_from_random_points, initialise_3d_plot, \
-    visualise_environment, do_rotation
-from plane import Plane
+from arcRotation import arc_movement_coordinates, rotation_rings, convert_to_cartesian
 
 
-def convert_to_polar(x,y,z):
+def add_circle_ref(radius_circle):
+    # Generate a unit circle in the xy-plane at z=0
+    theta = np.linspace(0, 2 * np.pi, 100)
+    circle_x = np.cos(theta) * radius_circle
+    circle_y = np.sin(theta) * radius_circle
+    circle_z = np.zeros_like(theta)  # z = 0
+
+    # Plot the unit circle
+    ax.plot(circle_x, circle_y, circle_z, f"-r", linewidth=0.5, label="Unit Circle (z=0)")
+
+
+def add_hemisphere(radius_circle):
+    # Create hemisphere surface
+    phi = np.linspace(0, np.pi / 2, 30)  # Polar angle from 0 to 90 degrees (hemisphere)
+    theta = np.linspace(0, 2 * np.pi, 30)  # Azimuthal angle
+    phi, theta = np.meshgrid(phi, theta)
+
+    # Convert spherical to Cartesian coordinates
+    hemisphere_x = radius_circle * np.sin(phi) * np.cos(theta)
+    hemisphere_y = radius_circle * np.sin(phi) * np.sin(theta)
+    hemisphere_z = radius_circle * np.cos(phi)  # Positive z-values only
+
+    # Plot the hemisphere
+    ax.plot_surface(hemisphere_x, hemisphere_y, hemisphere_z, color='r', alpha=0.1,
+                    edgecolor='none')  # Semi-transparent
+
+
+def plot_cords_mat(ax, point_list, c, label):
     """
-    Received coordinates in cartesian form and converts to polar
-    """
-
-    theta = np.arctan2(y, x)
-    rho = np.sqrt(x**2 + y**2 + z**2)
-    phi = np.arccos(z / rho)
-
-    polar = np.array([rho, theta, phi])
-
-    print(f"X: {x:.2f}, Y: {y:.2f}, Z: {z:.2f} -> to polar: \nRho: {polar[0]:.2f}, Theta: {np.degrees(polar[1]):.2f}°, Phi: {np.degrees(polar[2]):.2f}°")
-    # print(f"Rho: {polar[0]:.2f}, Theta: {np.degrees(polar[1]):.2f}°, Phi: {np.degrees(polar[2]):.2f}°")
-
-    return polar
-
-def plot_spherical_coordinates(ax, polarCoords):
-    """
-    Converts spherical coordinates (rho, theta, phi) to Cartesian and plots them in 3D.
+    Plots a list of 3D points and ensures they appear in the legend.
 
     Args:
-        rho (float): Radius (distance from origin).
-        theta (float): Azimuth angle in **radians**.
-        phi (float): Elevation angle in **radians**.
+        ax: Matplotlib 3D axis object.
+        point_list: List of (x, y, z) coordinates.
+        c: Color of the points.
+        label: Label for legend.
     """
-    n = len(polarCoords)
-    for i in range(n):
-        # Extract spherical coordinates
-        rho, theta, phi = polarCoords[i]
+    # Plot all points with a single scatter call
+    x_vals = [round(float(x), 2) for x, y, z in point_list]
+    y_vals = [round(float(y), 2) for x, y, z in point_list]
+    z_vals = [round(float(z), 2) for x, y, z in point_list]
 
-        # Correct Cartesian conversion
-        x = rho * np.sin(phi) * np.cos(theta)
-        y = rho * np.sin(phi) * np.sin(theta)
-        z = rho * np.cos(phi)
+    # Combine points into single nested list
+    formatted_points = [[x, y, z] for x, y, z in zip(x_vals, y_vals, z_vals)]
 
-        ax.scatter(x, y, z, color='blue', alpha=(n - i) / n, s=100, label="Converted Point")
+    print(f"Number of points: {len(point_list)}")
+    print(f"Point list: {formatted_points}")
 
-    ax.set_xlim([-polarCoords[0][0], polarCoords[0][0]])
-    ax.set_ylim([-polarCoords[0][0], polarCoords[0][0]])
-    ax.set_zlim([-polarCoords[0][0], polarCoords[0][0]])
+    # Plot points
+    ax.scatter(x_vals, y_vals, z_vals, c=c, marker='o', label=label)
 
-def prepareFigure():
-    # Create a 3D figure
-    fig = plt.figure(figsize=(7, 7))
-    ax = fig.add_subplot(111, projection='3d')
-
-    # Plot reference axes
-    ax.quiver(0, 0, 0, 1, 0, 0, color='r', arrow_length_ratio=0.1, label='X-axis')
-    ax.quiver(0, 0, 0, 0, 1, 0, color='g', arrow_length_ratio=0.1, label='Y-axis')
-    ax.quiver(0, 0, 0, 0, 0, 1, color='b', arrow_length_ratio=0.1, label='Z-axis')
-
-    circle_theta = np.linspace(0, 2 * np.pi, 100)  # 100 points around the circle
-    circle_x = np.cos(circle_theta)  # X-coordinates
-    circle_y = np.sin(circle_theta)  # Y-coordinates
-    circle_z = np.zeros_like(circle_x)  # Keep Z at 0 (XY-plane)
-
-    # Plot unit circle
-    ax.plot(circle_x, circle_y, circle_z, color='black', linestyle='dashed', label="Unit Circle in XY-plane")
-
-    # Set labels and limits
-    ax.set_xlabel("X-axis")
-    ax.set_ylabel("Y-axis")
-    ax.set_zlabel("Z-axis")
-    ax.set_title("3D Plot of Spherical Coordinates")
-
-    return fig, ax
+    ax.legend()
 
 
-def main_movement_test():
-    # Step 1: Initialize planes and areas
-    sensorPlane, sourcePlane, interPlane, sensorArea = initialise_planes_and_areas()
+radius = 9
+arc_angle = 90
 
-    # Step 2: Create lines from source plane
-    lines = create_lines_from_random_points(sourcePlane, num_points=60, direction=sourcePlane.direction)
+# Create a 3D plot
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection='3d')
 
-    # Step 3: Create 3D plot and visualize environment
-    fig = initialise_3d_plot(sourcePlane)
-    fig = visualise_environment(fig, sensorPlane, "red")
-    fig = visualise_environment(fig, sourcePlane, "yellow")
+# Add reference circle and hemisphere to figure
+add_circle_ref(radius)
+add_hemisphere(radius)
 
-    # Step 4: Apply translation / rotation to original source plane
-        # Create copy of sourcePlane
-        # rotate by 90 degrees in x-axis
-        # translate to desired starting position
-    theta = 90 # Degrees of rotation
-    translation = np.array([1, 0, -1]) # Translation vector for moving source plane
-
-    rotationAxis = "x"
-
-    # Create new plane be rotated / translated source plane
-    new_source_plane = Plane(f"Rotated {theta:.0f}° in {rotationAxis}-axis",
-                             sourcePlane.position,
-                             sourcePlane.direction,
-                             sourcePlane.width,
-                             sourcePlane.length)
-
-    # Apply rotation
-    new_source_plane.rotate_plane(do_rotation(np.radians(theta), rotationAxis))
-
-    # Apply translation
-    new_source_plane.translate_plane(translation)
-
-    # Visualise the new source plane
-    fig = visualise_environment(fig, new_source_plane, "green")
-
-    new_source_plane.print_pose()
+# Define array of phi angles to generate points at
+phis = np.arange(90, -90, -30)  # Generate values for theta at each increment
+colours = ["b", "g", "r", "y","b", "g", "r", "y"]
 
 
-    fig, ax = prepareFigure()
+# arc_phi_angle = np.arange(90, -30, -30)
+# arc_theta_angle = 60
+# sequence_ID = 0
 
-    # Get coordinates for P at each new position
-    cartesianCoords, polarCoords = arc_movement_coordinates(30, 9)
+arc_theta_angle = np.arange(90, -30, -30)
+arc_phi_angle = 60
+sequence_ID = 1
 
-    # Update Matlib 2D plot of positions
-    plot_spherical_coordinates(ax, polarCoords)
+
+phis = np.arange(90, -120, -30)
+theta = np.zeros(len(phis))
+r = np.ones(len(phis)) * radius
+
+print(f"Phi: {phis} shape = {phis.shape}")
+print(f"Theta: {theta}")
+print(f"R: {r}")
 
 
 
-    # Show plot
-    plt.show()
-    fig.show()
 
-# convert_to_polar(0,-1,0)
-# main_movement_test()
+# Make a loop through each phi angle
+i = 0
+for idx, phi_angles in enumerate(phis):
+    # Returns coordinates around circle
 
+
+    # all_positions, all_positions_polar = rotation_rings(
+    #     sequence_ID,
+    #     radius,  # Radius of arc movement
+    #     arc_theta_angle,# steps of theta taken around the arc
+    #     arc_phi_angle  # phi levels to the spherical arc
+    # )
+
+    cartesian_coords = convert_to_cartesian(r[idx], np.radians(theta[idx]), np.radians(phi_angles))
+    all_positions = [tuple(cartesian_coords)]  # Convert to a list of one tuple
+
+
+
+    print(f"For current phi angle: {phi_angles}")
+
+    arc_radius = radius * np.sin(np.radians(phi_angles))
+    print(f"Arc radius: {round(arc_radius,2)}")
+
+    # Add points to ax from cartesian points list
+    plot_cords_mat(ax, all_positions, colours[i], f"Level: {i} φ: {phi_angles}")
+
+    i = i + 1
+
+
+# Labels
+ax.set_xlabel('X Axis')
+ax.set_ylabel('Y Axis')
+ax.set_zlabel('Z Axis')
+ax.set_title(f"All arc movement plane positions \n (r, θ, φ) = ({radius}, {arc_angle}, φ)")
+
+plt.legend()
+# Show the plot
+plt.show()

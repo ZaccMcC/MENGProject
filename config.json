@@ -1,0 +1,100 @@
+{
+  "planes": {
+    "source_plane": {
+      "position": [0, 0, 1],
+      "direction": [0, 0, -1],
+      "width": 4,
+      "length": 4
+    },
+    "sensor_plane": {
+      "position": [0, 0, 0],
+      "direction": [0, 0, 1],
+      "width": 10,
+      "length": 10
+    },
+    "aperture_plane": {
+      "position": [0, 0, 1],
+      "direction": [0, 0, 1],
+      "width": 5,
+      "length": 5
+    }
+  },
+  "sensor_areas": {
+    "sensor_A": {
+      "title": "Sensor A",
+      "position": [-2, -2, 0],
+      "direction": [0, 0, 1],
+      "width": 3,
+      "length": 4
+    },
+    "sensor_B": {
+      "title": "Sensor B",
+      "position": [2, 2, 0],
+      "direction": [0, 0, 1],
+      "width": 1,
+      "length": 1
+    }
+  },
+  "aperture_areas": {
+    "Aperture_A": {
+      "title": "Aperture_A",
+      "position": [-2, -2, 1],
+      "direction": [0, 0, 1],
+      "width": 2,
+      "length": 2
+    },
+    "Aperture_B": {
+      "title": "Aperture_B",
+      "position": [2, 2, 1],
+      "direction": [0, 0, 1],
+      "width": 2,
+      "length": 2
+    }
+  },
+
+  "arc_movement": {
+    "execute_movements": true,
+    "initial_rotation": 90,
+    "rotation_axis": "y",
+    "radius": 10,
+    "arc_theta_angle": 60,
+    "arc_phi_step": 30,
+    "horizontal_circles": false,
+    "arc_phi_angle": 10,
+    "arc_theta_step": 45
+  },
+  "simulation": {
+    "num_lines": 1
+  },
+  "intersection": {
+    "max_distance": 100,
+    "strict_mode": true,
+    "tolerance": 0.01
+  },
+  "visualization": {
+    "show_output_parent": true,
+    "show_sensor_plane": true,
+    "show_source_plane": false,
+    "show_sensor_area": true,
+    "show_aperture_area": true,
+    "show_aperture_plane": false,
+    "color_sensor_plane": "red",
+    "color_source_plane": "yellow",
+    "color_aperture_plane": "green",
+    "color_sensor_area": "green",
+    "color_aperture_area": "black",
+    "show_axes": true,
+    "animated_plot": false,
+    "frame_rate": 500,
+    "hits_to_display": 2,
+    "misses_to_display": 2
+  },
+  "debugging": {
+    "enable_logging": true,
+    "logging_level": "debug"
+  },
+  "performance": {
+    "enable_memory_profiling": true,
+    "optimization_level": "basic"
+  }
+}

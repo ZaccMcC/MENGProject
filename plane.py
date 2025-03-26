@@ -1,6 +1,7 @@
+import logging
+
 import numpy as np
 from matplotlib import pyplot as plt
-import random
 import plotly.graph_objects as go  # For 3D visualization
 
 class Plane:
@@ -41,6 +42,9 @@ class Plane:
 
         # Compute initial corners using the local frame
         self.update_corners()
+
+        # Definable colours
+        self.colour = None
         # print(f"\n {self.title} Corners after initial definition: {self.corners}")
 
     def update_corners(self):
@@ -76,10 +80,11 @@ class Plane:
 
         # Compute local reference frame (right, up, normal)
         # self.right, self.up, self.direction = compute_local_axes(self.direction)
-
         # Verify consistency
-        assert np.isclose(np.dot(self.up, self.right), 0), "Up and right are not orthogonal"
-        assert np.isclose(np.linalg.norm(self.direction), 1), "Direction vector is not normalized"
+        computed_normal = np.cross(self.right, self.up)
+        if not np.allclose(computed_normal, self.direction, atol=1e-6):
+            raise ValueError(
+                f"Right-Hand Rule Violated after rotation! Computed normal {computed_normal} does not match expected normal {self.direction}")
 
     def translate_plane(self, translation_vector):
         self.position = self.position + translation_vector
@@ -109,7 +114,7 @@ class Plane:
             k=[2, 3, 0, 3],
             color=colour,
             opacity=0.5,
-            name=self.title
+            name=f"{self.title} (Mesh)"
         ))
 
             # Add a dummy trace for the legend
@@ -117,7 +122,7 @@ class Plane:
             x=[x[0]], y=[y[0]], z=[z[0]],  # Single point (dummy)
             mode='markers',
             marker=dict(size=5, color=colour, opacity=0.5),
-            name=self.title,  # Legend entry
+            name=f"{self.title} (Trace)",  # Legend entry
             showlegend=True
         ))
 
@@ -128,7 +133,8 @@ class Plane:
                 mode='text',
                 text=f'P{i}',  # Label each corner as P0, P1, P2, etc.
                 textposition='top center',
-                showlegend=False
+                showlegend=False,
+                name=f"{self.title} (corner {i})"
             ))
 
         # print(f"Plane : {self.title}")
@@ -165,18 +171,12 @@ class Plane:
             quantity (int): The number of random points to generate.
 
         Returns:
-            np.array: Array of random (x, y) points on the plane.
+            np.stack: Returns (N,2) array of random (x, y) points on the plane.
         """
-        points = []  # Placeholder for the generated points
 
-        for _ in range(quantity):
-            # Generate random coordinates (x, y) within plane dimensions
-            x = random.uniform(-self.width / 2, self.width / 2)
-            y = random.uniform(-self.length / 2, self.length / 2)
-            points.append([x, y])
-
-        # Convert the list of points into a Numpy array
-        return np.array(points)
+        x = np.random.uniform(-self.width / 2, self.width / 2, quantity)
+        y = np.random.uniform(-self.length / 2, self.length / 2, quantity)
+        return np.vstack((x, y)).T  # Returns an (N,2) array
 
     def plot_points(self, point):
         """
@@ -221,7 +221,7 @@ class Plane:
 
         position_str = ", ".join(f"{x:.2f}" for x in self.position)
 
-        print(f"{self.title} --- \n  position: [{position_str}]\n\n  right(red) (x): [{right_str}]\n  up(green) (y): [{up_str}]\n  normal(blue) (z): [{direction_str}]\n")
+        logging.info(f"{self.title} --- \n  position: [{position_str}]\n\n  right(red) (x): [{right_str}]\n  up(green) (y): [{up_str}]\n  normal(blue) (z): [{direction_str}]\n")
 
         # corners_str = ", ".join(
         #     f"[{', '.join(f'{val:.2f}' for val in corner)}]" for corner in self.corners)
@@ -258,6 +258,10 @@ def compute_local_axes(normal):
 
     # Ensure normalization
     up /= np.linalg.norm(up)
+
+    computed_normal = np.cross(right, up)
+    if not np.allclose(computed_normal, normal, atol=1e-6):
+        raise ValueError(f"Right-Hand Rule Violated! Computed normal {computed_normal} does not match expected normal {normal}")
 
     # print(f"Right: {right} Up: {up} Normal: {normal}")
     return right, up, normal  # Return orthonormal basis
