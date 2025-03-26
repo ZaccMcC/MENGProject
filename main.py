@@ -667,6 +667,25 @@ def move_plane_along_arc(start_plane, all_positions, primary_angle, rotation_axi
         logging.info("")
         logging.info(f"Beginning of arc movement {idx}")
 
+        if sequence_ID == 3:
+            logging.info(f"Step {idx}: Rigid arc facing origin")
+
+            if idx == 0:
+                new_plane = initialise_new_circle(start_plane, position)
+                new_plane.title = f"Plane {idx} - Start"
+            else:
+                new_plane = initialise_new_circle(rotated_planes[idx - 1], position)
+                new_plane.title = f"Plane {idx} - Facing origin"
+
+                # Calculate rotation to face origin
+                R, angle = calculate_rotation_matrix(position, new_plane.direction)
+                new_plane.rotate_plane(R)
+                logging.debug(f"Plane {idx} rotated {np.round(np.degrees(angle),2)}° to face origin")
+
+            rotated_planes.append(new_plane)
+            new_plane.print_pose()
+            continue  # Skip other movements
+
         movement_type = determine_movement_type(idx, 1, secondary_angle)
 
         logging.info(f"Movement type: {movement_type}")
@@ -839,6 +858,59 @@ def prepare_line_samples(lines, line_list, sample_size):
     return lines_graphics
 
 
+def rigid_arc_rotation(radius, arc_resolution_deg, tilt_angles):
+    """
+    Generates 3D coordinates along a semicircular arc in the x-z plane,
+    then applies a series of rotations about the x-axis using the provided tilt angles.
+
+    Args:
+        radius (float): Radius of the arc.
+        arc_resolution_deg (float): Angle increment for arc sampling.
+        tilt_angles (list or array): List of angles to rotate arc about x-axis.
+
+    Returns:
+        np.ndarray: Stacked array of all rotated arc positions in Cartesian coordinates (shape: [N_total, 3])
+    """
+    # Generate arc angles from 0 to 180 degrees (semi-circle)
+    theta_arc = np.radians(np.arange(0, 180 + arc_resolution_deg, arc_resolution_deg))
+
+    # Arc in x-z plane
+    x = radius * np.cos(theta_arc)
+    y = np.zeros_like(x)
+    z = radius * np.sin(theta_arc)
+
+    arc_points = np.vstack((x, y, z))  # shape: [3, N]
+
+    all_rotated_positions = []
+
+    for tilt_angle_deg in tilt_angles:
+        # Rotation matrix about x-axis
+        tilt_rad = np.radians(tilt_angle_deg)
+        R_x = np.array([
+            [1, 0, 0],
+            [0, np.cos(tilt_rad), -np.sin(tilt_rad)],
+            [0, np.sin(tilt_rad), np.cos(tilt_rad)]
+        ])
+
+        # Apply rotation
+        rotated_arc = R_x @ arc_points  # shape: [3, N]
+        all_rotated_positions.append(rotated_arc.T)  # shape: [N, 3]
+
+        logging.debug(f"Rotated arc size: {np.shape(rotated_arc.T)}")
+
+        logging.debug(f"Rotated arc: {np.shape(all_rotated_positions)}")
+
+    return np.vstack(all_rotated_positions)  # shape: [N_total, 3]
+
+
+def log_parameters(arc_phi_angle, arc_theta_angle, rotation_step, rotation_axis):
+    # Display simulation parameters
+    logging.info(f"Arc phi angles: {arc_phi_angle}")
+    logging.info(f"Arc theta angles: {arc_theta_angle}")
+    logging.info(f"Rotation step: {np.round(np.degrees(rotation_step), 2)}")
+    logging.info(f"Rotation axis: {rotation_axis}")
+
+
 @profile(stream=open("memory_profile.log", "w"))
 def main():
     """
@@ -877,8 +949,6 @@ def main():
     sensorPlane.title = "Parent axis"
     sensorPlane.print_pose()
 
-    # sourcePlane.plot_axis(fig)
-
     sourcePlane.title = "Source plane"
     sourcePlane.print_pose()
 
@@ -887,36 +957,75 @@ def main():
     # Gets all position P vectors for the plane as it rotates around arc
     # Increments first through arc_theta_angles, then phis
     horizontal_circles = config.arc_movement["horizontal_circles"]
+    vertical_circles = config.arc_movement["vertical_circles"]
+    rigid_arc = config.arc_movement["rigid_arc"]
 
     if horizontal_circles == 1:
         logging.info("Horizontal circles movement")
+
         arc_phi_angle = np.arange(90, -config.arc_movement["arc_phi_step"], -config.arc_movement["arc_phi_step"])
         arc_theta_angle = config.arc_movement["arc_theta_angle"] # Secondary rotation
+
         sequence_ID = 2  # 2 for horizontal circles movement
+
         rotation_axis = ["z", "y"]
         rotation_step = np.radians(config.arc_movement["arc_theta_angle"]) # Secondary rotation
-    else:
+
+        log_parameters(arc_phi_angle, arc_theta_angle, rotation_step, rotation_axis)
+
+    elif vertical_circles == 1:
         logging.info("Vertical circles movement")
-        arc_phi_angle = 10 # Secondary rotation
-        arc_theta_angle = [0, 60]
+
+        arc_phi_angle = config.arc_movement["arc_phi_angle"] # Secondary rotation
+        arc_theta_angle = config.arc_movement["arc_theta_step"]
+
         sequence_ID = 1  # 1 for vertical circles movement
+
         rotation_axis = ["y", "z"]
         rotation_step = np.radians(-arc_phi_angle) # Secondary rotation
 
-    # Display simulation parameters
-    logging.info(f"Arc phi angles: {arc_phi_angle}")
-    logging.info(f"Arc theta angles: {arc_theta_angle}")
-    logging.info(f"Rotation step: {np.round(np.degrees(rotation_step), 2)}")
-    logging.info(f"Rotation axis: {rotation_axis}")
+        log_parameters(arc_phi_angle, arc_theta_angle, rotation_step, rotation_axis)
+
+    elif rigid_arc:
+        logging.info("Rigid Arc circles movement")
+
+        arc_phi_angle = config.arc_movement["arc_phi_angle"] # Secondary rotation
+
+        arc_theta_angle = config.arc_movement["arc_theta_step"]
+
+        if len(arc_theta_angle) > 1:
+            arc_theta_angle = [arc_theta_angle[0]]
+
+        sequence_ID = 3  # 3 for rigid arc movement
+
+        rotation_axis = ["y", "z"]
+        rotation_step = np.radians(-arc_phi_angle[0]) # Secondary rotation
+
+        # Generate positions for rotation in rigid arc
+        rigid_arc_positions = rigid_arc_rotation(config.arc_movement["radius"], 10, [0, 45])
+        logging.debug(f"Rigid arc positions shape: {np.shape(rigid_arc_positions)}")
+
+        # rigid_arc_positions = rigid_arc_rotation(config.arc_movement["radius"], arc_theta_angle, arc_phi_angle)
+
+        logging.info(f"Arc phi angles: {arc_phi_angle}")
+        logging.info(f"Arc theta angles: {arc_theta_angle}")
+        logging.info(f"Rotation step: {np.round(np.degrees(rotation_step), 2)}")
+
+    else:
+        logging.info("No movement")
+        exit(3)
 
 
-    all_positions, secondary_movement = rotation_rings(
-        sequence_ID,
-        config.arc_movement["radius"],  # Radius of arc movement
-        arc_theta_angle,# steps of theta taken around the arc
-        arc_phi_angle  # phi levels to the spherical arc
-    )
-
+    if rigid_arc:
+        all_positions = rigid_arc_positions
+        secondary_movement = np.zeros(len(all_positions))  # not needed
+    else:
+        all_positions, secondary_movement = rotation_rings(
+            sequence_ID,
+            config.arc_movement["radius"],  # Radius of arc movement
+            arc_theta_angle,# steps of theta taken around the arc
+            arc_phi_angle  # phi levels to the spherical arc
+        )
 
     # -- Phase 2: Move to first arc position -- #
     start_pose_plane = setup_initial_pose(
@@ -930,7 +1039,6 @@ def main():
     if sequence_ID == 2:
         reference_angle = secondary_movement[0]
         secondary_movement -= reference_angle # sets the secondary angle to the starting position (not abs)
-
 
     # -- Phase 3: Apply the plane along the arc -- #
     # Move plane along arc and update lines
@@ -956,7 +1064,7 @@ def main():
         update_lines_global_positions(lines, plane)
         logging.debug(f"\n\nChecking intersections: {plane.title}")
         hit, miss, hit_list, miss_list = evaluate_line_results(sensorPlane, sensorAreas, aperturePlane, aperture_areas, lines)
-        # handle_results(sensorAreas)
+        handle_results(sensorAreas)
         logging.info(f"Plane {plane.title} has {hit} hits and {miss} misses")
 
         results[idx, 0] = hit

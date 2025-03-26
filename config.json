@@ -60,8 +60,11 @@
     "arc_theta_angle": 60,
     "arc_phi_step": 30,
     "horizontal_circles": false,
-    "arc_phi_angle": 10,
-    "arc_theta_step": 45
+    "vertical_circles": false,
+    "arc_phi_angle": [10],
+    "arc_theta_step": [0,45],
+    "rigid_arc": true,
+    "tilt_angles": [0,45]
   },
   "simulation": {
     "num_lines": 1

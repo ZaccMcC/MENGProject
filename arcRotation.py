@@ -158,6 +158,10 @@ def rotation_rings(sequence_ID, radius, angle_theta, angle_phi):
 
     logging.debug(f"Generated {len(all_points)} points for rotation rings \n")
 
+    for i in range(len(all_points)):
+        print(f"Point {i}: ({np.round(all_points[i][0], 2)}, {np.round(all_points[i][1], 2)}, {np.round(all_points[i][2], 2)})"
+              f" ({allPositions_polar[i][0]}, {np.round(np.degrees(allPositions_polar[i][1]),2)}, {np.round(np.degrees(allPositions_polar[i][2]),2)})")
+
     return all_points, allPositions_polar[:, sequence_ID]
 
 def arc_movement_vector(plane_object, coords):
