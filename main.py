@@ -331,7 +331,7 @@ def setup_initial_pose(source_plane, theta, rotation_axis, all_positions):
     start_pose_plane.print_pose()
 
     # Set position to the first computed arc position instead of translating manually
-    logging.info(f"Moving to initial arc position: {np.round(all_positions[0], 2)}")
+    logging.debug(f"Moving to initial arc position: {np.round(all_positions[0], 2)}")
 
     # start_pose_plane.position = np.array(all_positions[0])
 
@@ -519,7 +519,7 @@ def calculate_rotation_matrix(position, direction):
         required_angle (float): Angle (rad) of rotation in calculated arbitrary rotation matrix.
     """
 
-    logging.info("Calculating new rotation matrix")
+    logging.debug("Calculating new rotation matrix")
     # Calculate target local z axis
     target_z = np.array([0, 0, 0]) - position
     # Normalized z-direction
@@ -623,13 +623,13 @@ def primary_rotation_handling(sequence_ID, new_plane, next_position, required_an
 
     if sequence_ID == 1:  # Vertical circles
         R_p, required_angle = calculate_rotation_matrix(next_position, new_plane.direction)
-        logging.info(
+        logging.debug(
             f"Required angle for new primary rotations: {np.round(np.degrees(required_angle), 2)}° about arbitrary axis")
 
     elif sequence_ID == 2:  # Horizontal circles
         # Apply rotation to align with the origin in the z axis
         R_p = do_rotation(required_angle, rotation_axis[0])
-        logging.info(f"Rotating {np.round(np.degrees(required_angle), 2)}° around {rotation_axis[0]}-axis")
+        logging.debug(f"Rotating {np.round(np.degrees(required_angle), 2)}° around {rotation_axis[0]}-axis")
 
     return R_p, required_angle, new_plane
 
@@ -661,21 +661,19 @@ def move_plane_along_arc(start_plane, all_positions, primary_angle, rotation_axi
 
     R_p = None
 
-    logging.info(f"All secondary angle: {np.round(np.degrees(secondary_angle), 2)}°")
     # exit(2)
     for idx, position in enumerate(all_positions):
-        logging.info("")
-        logging.info(f"Beginning of arc movement {idx}")
+        logging.info(f"Performing arc movement {idx}")
 
         if sequence_ID == 3:
-            logging.info(f"Step {idx}: Rigid arc facing origin")
+            logging.debug(f"Step {idx}: Rigid arc facing origin")
 
             if idx == 0:
                 new_plane = initialise_new_circle(start_plane, position)
                 new_plane.title = f"Plane {idx} - Start"
             else:
                 new_plane = initialise_new_circle(rotated_planes[idx - 1], position)
-                new_plane.title = f"Plane {idx} - Facing origin"
+                new_plane.title = f"Plane {idx}"
 
                 # Calculate rotation to face origin
                 R, angle = calculate_rotation_matrix(position, new_plane.direction)
@@ -688,13 +686,13 @@ def move_plane_along_arc(start_plane, all_positions, primary_angle, rotation_axi
 
         movement_type = determine_movement_type(idx, 1, secondary_angle)
 
-        logging.info(f"Movement type: {movement_type}")
+        logging.debug(f"Movement type: {movement_type}")
         # Movement types:
         # 1 = First position
         # 2 = Horizontal circles
         # 3 = Same meridian
         # 4 = Different meridian
-        logging.info(f"Current secondary angle: {np.round(np.degrees(secondary_angle[idx]), 2)}°")
+        logging.debug(f"Current secondary angle: {np.round(np.degrees(secondary_angle[idx]), 2)}°")
 
         if movement_type is None:
             logging.error(f"Error: Unable to determine movement type for position {idx}")
@@ -702,7 +700,7 @@ def move_plane_along_arc(start_plane, all_positions, primary_angle, rotation_axi
 
         elif movement_type == 1:
 
-            logging.info(f"Step {idx}: First position")
+            logging.debug(f"Step {idx}: First position")
 
             # Create copy of original plane and translate it to new position
             new_plane = initialise_new_circle(start_plane, position)
@@ -718,7 +716,7 @@ def move_plane_along_arc(start_plane, all_positions, primary_angle, rotation_axi
 
         elif movement_type == 2:
 
-            logging.info(f"Step {idx}: Different meridian")
+            logging.debug(f"Step {idx}: Different meridian")
 
             # Create copy of original plane and translate it to new position
             new_plane = initialise_new_circle(start_plane, position)
@@ -746,7 +744,7 @@ def move_plane_along_arc(start_plane, all_positions, primary_angle, rotation_axi
 
         else:
 
-            logging.info(f"Step {idx}: Same meridian")
+            logging.debug(f"Step {idx}: Same meridian")
 
             # Create copy of previous plane and translate it to new position
             new_plane = initialise_new_circle(rotated_planes[idx - 1], position)
@@ -756,7 +754,7 @@ def move_plane_along_arc(start_plane, all_positions, primary_angle, rotation_axi
 
             # Apply rotation
             new_plane.rotate_plane(R_p)
-            logging.info(f"Plane {idx}: Applying primary rotation {np.round(np.degrees(primary_angle), 2)}°")
+            logging.debug(f"Plane {idx}: Applying primary rotation {np.round(np.degrees(primary_angle), 2)}°")
             logging.debug(f"Plane {idx} rotated direction: {np.round(new_plane.direction, 2)}")
 
         # Append new plane from ANY above ^^^^
@@ -843,7 +841,7 @@ def prepare_line_samples(lines, line_list, sample_size):
     # Validate sample size
 
     if line_list is None or len(line_list) == 0:
-        logging.warning("No lines to sample.")
+        logging.debug("No lines to sample.")
         return None
 
     logging.debug(f"Sample size: {sample_size}")
@@ -910,11 +908,11 @@ def rigid_arc_rotation(radius, arc_resolution_deg, tilt_angles):
 
 def log_parameters(primary_angle, secondary_angle, rotation_step, rotation_axis, sequence_ID):
     # Display simulation parameters
-    logging.info(f"sequence ID: {sequence_ID}")
-    logging.info(f"Primary angle: {primary_angle}")
-    logging.info(f"Secondary angle: {secondary_angle}")
-    logging.info(f"Rotation step: {np.round(np.degrees(rotation_step), 2)}")
-    logging.info(f"Rotation axis: {rotation_axis}")
+    logging.debug(f"sequence ID: {sequence_ID}")
+    logging.debug(f"Primary angle: {primary_angle}")
+    logging.debug(f"Secondary angle: {secondary_angle}")
+    logging.debug(f"Rotation step: {np.round(np.degrees(rotation_step), 2)}")
+    logging.debug(f"Rotation axis: {rotation_axis}")
 
 
 def get_horizontal_params(config):
@@ -1021,6 +1019,9 @@ def main():
         for aperture in aperture_areas:  # Display all defined apertures on the plot
             fig = visualise_environment(fig, aperture, config.visualization["color_aperture_area"])
 
+    with open("results.csv", "w") as results_file:
+        results_file.write(f"idx, hits, misses\n")
+
     sensorPlane.title = "Parent axis"
     sensorPlane.print_pose()
 
@@ -1090,7 +1091,7 @@ def main():
         secondary_movement = np.zeros(len(all_positions))  # not needed
 
     else:
-        logging.info("No movement")
+        logging.warning("No movement")
         exit(3)
 
     # -- Phase 2: Move to first arc position -- #
@@ -1116,23 +1117,26 @@ def main():
         rotated_planes = [start_pose_plane]
 
     # #        ----- Step 6: Evaluate hits and visualize lines -----        #
-    logging.debug(f"Figure content evaluation")
+    logging.info(f"\n\nChecking intersections:\n")
     # check_fig_data(fig)
     line_scatter_objects = []
     results = np.zeros((len(rotated_planes), 2))
 
     for idx, plane in enumerate(rotated_planes):  # Check lines for each plane
         update_lines_global_positions(lines, plane)
-        logging.debug(f"\n\nChecking intersections: {plane.title}")
+        logging.info(f"{plane.title}")
         hit, miss, hit_list, miss_list = evaluate_line_results(sensorPlane, sensorAreas, aperturePlane, aperture_areas,
                                                                lines)
         handle_results(sensorAreas)
-        logging.info(f"Plane {plane.title} has {hit} hits and {miss} misses")
+        logging.debug(f"{plane.title} has {hit} hits and {miss} misses")
 
         results[idx, 0] = hit
         results[idx, 1] = miss
 
-        ## Sample lines for visualisation
+        with open("results.csv", "a") as results_file:
+            results_file.write(f"{idx}, {results[idx, 0]}, {results[idx, 1]}\n")
+
+        # Sample lines for visualisation
         logging.debug(f"Selecting hits for visualisation for plane {idx}")
         lines_for_plane = []
 
@@ -1158,13 +1162,14 @@ def main():
         # show animation or static plot
         if config.visualization["animated_plot"]:
             fig = generate_arc_animation(fig, rotated_planes, line_scatter_objects, results)
+            logging.info("Animated plot generated.")
         else:
             fig = generate_static_arc_plot(fig, rotated_planes, line_scatter_objects)
             logging.info("Static plot generated.")
 
         fig.show()
     else:
-        logging.debug("Visualization disabled (show_output_parent = false).")
+        logging.info("Visualization disabled (show_output_parent = false).")
 
     print("\nFinished.    \n")
 

@@ -67,10 +67,10 @@
     "vertical_secondary": [0,45],
     "rigid_arc": true,
     "rigid_arc_step": 10,
-    "tilt_angles": [0,45]
+    "tilt_angles": [0]
   },
   "simulation": {
-    "num_lines": 1
+    "num_lines": 10
   },
   "intersection": {
     "max_distance": 100,
@@ -97,7 +97,7 @@
   },
   "debugging": {
     "enable_logging": true,
-    "logging_level": "debug"
+    "logging_level": "INFO"
   },
   "performance": {
     "enable_memory_profiling": true,

@@ -221,7 +221,7 @@ class Plane:
 
         position_str = ", ".join(f"{x:.2f}" for x in self.position)
 
-        logging.info(f"{self.title} --- \n  position: [{position_str}]\n\n  right(red) (x): [{right_str}]\n  up(green) (y): [{up_str}]\n  normal(blue) (z): [{direction_str}]\n")
+        logging.debug(f"{self.title} --- \n  position: [{position_str}]\n\n  right(red) (x): [{right_str}]\n  up(green) (y): [{up_str}]\n  normal(blue) (z): [{direction_str}]\n")
 
         # corners_str = ", ".join(
         #     f"[{', '.join(f'{val:.2f}' for val in corner)}]" for corner in self.corners)
