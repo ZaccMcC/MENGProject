@@ -908,12 +908,82 @@ def rigid_arc_rotation(radius, arc_resolution_deg, tilt_angles):
     return np.vstack(all_rotated_positions)  # shape: [N_total, 3]
 
 
-def log_parameters(arc_phi_angle, arc_theta_angle, rotation_step, rotation_axis):
+def log_parameters(primary_angle, secondary_angle, rotation_step, rotation_axis, sequence_ID):
     # Display simulation parameters
-    logging.info(f"Arc phi angles: {arc_phi_angle}")
-    logging.info(f"Arc theta angles: {arc_theta_angle}")
+    logging.info(f"sequence ID: {sequence_ID}")
+    logging.info(f"Primary angle: {primary_angle}")
+    logging.info(f"Secondary angle: {secondary_angle}")
     logging.info(f"Rotation step: {np.round(np.degrees(rotation_step), 2)}")
     logging.info(f"Rotation axis: {rotation_axis}")
+
+
+def get_horizontal_params(config):
+    """
+    Returns the parameters required to set up horizontal circle style of movements
+    Returns:
+    """
+    logging.info("Horizontal circles movement")
+
+    # Phi goes from 90 down to input arc_phi step
+    arc_phi_angle = np.arange(
+        90,
+        -config.arc_movement["horizontal_secondary"],
+        -config.arc_movement["horizontal_secondary"])  # Secondary rotation (between meridians)
+
+    arc_theta_angle = config.arc_movement["horizontal_primary"]  # Primary rotation (rotate on same meridian)
+
+    sequence_ID = 2  # 2 for horizontal circles movement
+
+    rotation_axis = ["z", "y"]
+    rotation_step = np.radians(arc_theta_angle)  # Primary rotation (rotate on same meridian)
+
+    log_parameters(arc_theta_angle, config.arc_movement["horizontal_secondary"], rotation_step, rotation_axis,
+                   sequence_ID)
+
+    return arc_phi_angle, arc_theta_angle, sequence_ID, rotation_axis, rotation_step
+
+
+def get_vertical_params(config):
+    """
+    Returns the parameters for vertical circle movement.
+    """
+    logging.info("Vertical circles movement")
+
+    arc_phi_angle = config.arc_movement["vertical_primary"]  # Primary rotation (rotate on same meridian)
+    arc_theta_angle = config.arc_movement["vertical_secondary"]  # Secondary rotation (rotate between meridians)
+
+    sequence_ID = 1  # 1 for vertical circles movement
+
+    rotation_axis = ["y", "z"]
+    rotation_step = np.radians(-arc_phi_angle)  # Primary rotation (rotate on same meridian)
+
+    log_parameters(arc_phi_angle, arc_theta_angle, rotation_step, rotation_axis, sequence_ID)
+
+    return arc_phi_angle, arc_theta_angle, sequence_ID, rotation_axis, rotation_step
+
+
+def get_rigid_params(config):
+    """
+    Returns the parameters for rigid arc movement.
+    Also, directly computes the 'rigid_arc_positions' array.
+    """
+    logging.info("Rigid Arc circles movement")
+
+    rigid_arc_step = config.arc_movement["rigid_arc_step"]
+
+    tilt_angles = config.arc_movement["tilt_angles"]
+
+    sequence_ID = 3  # 3 for rigid arc movement
+
+    rotation_axis = ["y", "z"]
+    rotation_step = np.radians(-10)
+
+    # Generate positions for rotation in rigid arc
+    rigid_arc_positions = rigid_arc_rotation(config.arc_movement["radius"], rigid_arc_step, tilt_angles)
+
+    logging.debug(f"Rigid arc positions shape: {np.shape(rigid_arc_positions)}")
+
+    return rigid_arc_step, tilt_angles, sequence_ID, rotation_axis, rotation_step, rigid_arc_positions
 
 
 @profile(stream=open("memory_profile.log", "w"))
@@ -967,80 +1037,61 @@ def main():
     vertical_circles = config.arc_movement["vertical_circles"]
     rigid_arc = config.arc_movement["rigid_arc"]
 
-    rigid_arc_flag = 0
+    #Initialise variables
+    arc_phi_angle = None
+    arc_theta_angle = None
+    sequence_id = None
+    rotation_axis = None
+    rotation_step = 0.0
+    rigid_positions = None
 
-    # Read from JSON config, which style of movement to do
-    if horizontal_circles == 1:
-        logging.info("Horizontal circles movement")
+    # Read from JSON config, set up for style of movement
+    if horizontal_circles:
+        (arc_phi_angle,
+         arc_theta_angle,
+         sequence_ID,
+         rotation_axis,
+         rotation_step) = get_horizontal_params(config)
 
-        # Phi goes from 90 down to input arc_phi step
-        arc_phi_angle = np.arange(
-                90,
-                -config.arc_movement["arc_phi_step"],  # Primary rotation (rotate on same meridian)
-                -config.arc_movement["arc_phi_step"])  # Secondary rotation (between meridians)
-
-        arc_theta_angle = config.arc_movement["arc_theta_angle"]  # Primary rotation (rotate on same meridian)
-
-        sequence_ID = 2  # 2 for horizontal circles movement
-
-        rotation_axis = ["z", "y"]
-        rotation_step = np.radians(config.arc_movement["arc_theta_angle"])  # Secondary rotation
-
-        log_parameters(arc_phi_angle, arc_theta_angle, rotation_step, rotation_axis)
-
-    elif vertical_circles == 1:
-        logging.info("Vertical circles movement")
-
-        arc_phi_angle = config.arc_movement["arc_phi_angle"] # Secondary rotation (rotate between meridians)
-        arc_theta_angle = config.arc_movement["arc_theta_step"]  # Primary rotation (rotate on same meridian)
-
-        sequence_ID = 1  # 1 for vertical circles movement
-
-        rotation_axis = ["y", "z"]
-        rotation_step = np.radians(-arc_phi_angle)  # Primary rotation (rotate on same meridian)
-
-        log_parameters(arc_phi_angle, arc_theta_angle, rotation_step, rotation_axis)
-
-    elif rigid_arc:
-        logging.info("Rigid Arc circles movement")
-
-        arc_phi_angle = config.arc_movement["arc_phi_angle"]  # Secondary rotation
-
-        arc_theta_angle = config.arc_movement["arc_theta_step"]
-
-        if len(arc_theta_angle) > 1:
-            arc_theta_angle = [arc_theta_angle[0]]
-
-        sequence_ID = 3  # 3 for rigid arc movement
-
-        rotation_axis = ["y", "z"]
-        rotation_step = np.radians(-arc_phi_angle[0])  # Secondary rotation
-
-        # Generate positions for rotation in rigid arc
-        rigid_arc_positions = rigid_arc_rotation(config.arc_movement["radius"], 10, [0, 45])
-        logging.debug(f"Rigid arc positions shape: {np.shape(rigid_arc_positions)}")
-
-        # rigid_arc_positions = rigid_arc_rotation(config.arc_movement["radius"], arc_theta_angle, arc_phi_angle)
-
-        logging.info(f"Arc phi angles: {arc_phi_angle}")
-        logging.info(f"Arc theta angles: {arc_theta_angle}")
-        logging.info(f"Rotation step: {np.round(np.degrees(rotation_step), 2)}")
-
-        rigid_arc_flag = 1
-    else:
-        logging.info("No movement")
-        exit(3)
-
-    if rigid_arc_flag:
-        all_positions = rigid_arc_positions
-        secondary_movement = np.zeros(len(all_positions))  # not needed
-    else:
+        # Generate movement sequence
         all_positions, secondary_movement = rotation_rings(
             sequence_ID,
             config.arc_movement["radius"],  # Radius of arc movement
             arc_theta_angle,  # steps of theta taken around the arc
             arc_phi_angle  # phi levels to the spherical arc
         )
+        # Correct form of secondary movement for horizontal circles
+        reference_angle = secondary_movement[0]
+        secondary_movement -= reference_angle  # sets the secondary angle to the starting position (not abs)
+
+    elif vertical_circles:
+        (arc_phi_angle,
+         arc_theta_angle,
+         sequence_ID,
+         rotation_axis,
+         rotation_step) = get_vertical_params(config)
+
+        # Generate movement sequence
+        all_positions, secondary_movement = rotation_rings(
+            sequence_ID,
+            config.arc_movement["radius"],  # Radius of arc movement
+            arc_theta_angle,  # steps of theta taken around the arc
+            arc_phi_angle  # phi levels to the spherical arc
+        )
+
+    elif rigid_arc:
+        (arc_phi_angle,
+         arc_theta_angle,
+         sequence_ID,
+         rotation_axis,
+         rotation_step,
+         all_positions) = get_rigid_params(config)
+
+        secondary_movement = np.zeros(len(all_positions))  # not needed
+
+    else:
+        logging.info("No movement")
+        exit(3)
 
     # -- Phase 2: Move to first arc position -- #
     start_pose_plane = setup_initial_pose(
@@ -1049,11 +1100,6 @@ def main():
         config.arc_movement["rotation_axis"],
         all_positions
     )
-
-    # Correct form of secondary movement for horizontal circles
-    if sequence_ID == 2:
-        reference_angle = secondary_movement[0]
-        secondary_movement -= reference_angle  # sets the secondary angle to the starting position (not abs)
 
     # -- Phase 3: Apply the plane along the arc -- #
     # Move plane along arc and update lines
