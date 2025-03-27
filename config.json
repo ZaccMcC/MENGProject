@@ -59,7 +59,7 @@
     "radius": 10,
     "arc_theta_angle": 60,
     "arc_phi_step": 30,
-    "horizontal_circles": false,
+    "horizontal_circles": true,
     "vertical_circles": false,
     "arc_phi_angle": [10],
     "arc_theta_step": [0,45],
