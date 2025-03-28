@@ -252,30 +252,35 @@ def evaluate_line_results(sensorPlane, sensorArea, aperturePlane, apertureAreas,
 
 def handle_results(sensor_objects, sim_idx, idx):
     """
-    Handles the results from intersection calculations
-    Args:
-        sensor_objects: List of all sensor objects
-
-    Returns:
-
+    Logs hit results for each sensor at a given simulation index and arc position index.
+    Creates a header dynamically on the first write.
     """
-    result_str = f""
 
-    for sensors in sensor_objects:
-        if sensors.illumination != 0:
-            logging.debug(f"{sensors.title} was illuminated")
-        else:
-            logging.debug(f"Sensor {sensors.title} was not illuminated")
+    file_path = "sensor_results.csv"
+    write_header = not os.path.exists(file_path) or (sim_idx == 0 and idx == 0)
 
-        result_str = result_str + f"{sensors.title}, {sensors.illumination},"
+    row_data = [sim_idx, idx]
+    sensor_titles = []
 
-    # Write results to csv
-    with open("sensor_results.csv", "a") as sensor_results_file:
-        sensor_results_file.write(
-            f"{sim_idx}, {idx}, {result_str}\n")
+    for sensor in sensor_objects:
+        sensor_titles.append(sensor.title)
+        row_data.append(sensor.title)
+        row_data.append(sensor.illumination)
 
-    # with open("sensor_results.csv", "a") as sensor_results_file:
-    #     sensor_results_file.write(f"\n")
+    # Write header if needed
+    if write_header:
+        header = ["sim", "idx"]
+        for title in sensor_titles:
+            header.append(f"{title}")
+            header.append("hits")
+        with open(file_path, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+
+    # Append row
+    with open(file_path, "a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(row_data)
 
 
 def do_rotation(theta, axis):
@@ -886,7 +891,7 @@ def prepare_line_samples(lines, line_list, sample_size):
     logging.debug(f"Number of lines: {len(line_list)}")
 
     if sample_size > len(line_list):
-        logging.warning(f"Sample size {sample_size} is larger than number of lines {len(line_list)}.")
+        logging.warning(f"  Sample size {sample_size} is larger than number of lines {len(line_list)}.")
         sample_size = len(line_list)
 
     # Extract samples
@@ -1220,7 +1225,7 @@ if __name__ == "__main__":
 
 # @profile(stream=open("memory_profile.log", "w"))
 # def run_all_test(num_lines):
-#     for i in range(20):
+#     for i in range(config.simulation["num_runs"]):
 #         logging.info(f"\n--- Simulation Run {i + 1} ---")
 #
 #         sim_idx = prepare_output(config.debugging["data_csv_path"])
@@ -1246,7 +1251,7 @@ if __name__ == "__main__":
 #
 # if __name__ == "__main__":
 #
-#     line_tests = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+#     line_tests = [100, 600, 1200]
 #
 #
 #     for num_lines in line_tests:

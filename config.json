@@ -24,15 +24,29 @@
       "title": "Sensor A",
       "position": [-2, -2, 0],
       "direction": [0, 0, 1],
-      "width": 3,
-      "length": 4
+      "width": 1.5,
+      "length": 1.5
     },
     "sensor_B": {
       "title": "Sensor B",
-      "position": [2, 2, 0],
+      "position": [-2, -3, 0],
       "direction": [0, 0, 1],
-      "width": 1,
-      "length": 1
+      "width": 1.5,
+      "length": 1.5
+    },
+    "sensor_C": {
+    "title": "Sensor C",
+    "position": [3, 2, 0],
+    "direction": [0, 0, 1],
+    "width": 1.5,
+    "length": 1.5
+    },
+    "sensor_D": {
+    "title": "Sensor D",
+    "position": [2, 2, 0],
+    "direction": [0, 0, 1],
+    "width": 1.5,
+    "length": 1.5
     }
   },
   "aperture_areas": {
@@ -79,7 +93,7 @@
     "tolerance": 0.01
   },
   "visualization": {
-    "show_output_parent": false,
+    "show_output_parent": true,
     "show_sensor_plane": true,
     "show_source_plane": false,
     "show_sensor_area": true,
