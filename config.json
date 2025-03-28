@@ -70,7 +70,8 @@
     "tilt_angles": [0]
   },
   "simulation": {
-    "num_lines": 100
+    "num_lines": 1000,
+    "num_runs" : 20
   },
   "intersection": {
     "max_distance": 100,

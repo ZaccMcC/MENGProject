@@ -28,7 +28,7 @@ def prepare_output(results_path):
     if not os.path.exists(results_path):
         sim_idx = 0
         with open(results_path, "w", newline='') as results_file:
-            results_file.write("sim,idx,hits,misses,ratio,ray count\n")
+            results_file.write("sim,idx,hits,misses,ray count,runtime\n")
     else:
         with open(results_path, "r", newline='') as results_file:
             reader = list(csv.reader(results_file))
@@ -250,7 +250,7 @@ def evaluate_line_results(sensorPlane, sensorArea, aperturePlane, apertureAreas,
     return hit, miss, hit_list, miss_list
 
 
-def handle_results(sensor_objects):
+def handle_results(sensor_objects, sim_idx, idx):
     """
     Handles the results from intersection calculations
     Args:
@@ -259,11 +259,23 @@ def handle_results(sensor_objects):
     Returns:
 
     """
+    result_str = f""
+
     for sensors in sensor_objects:
         if sensors.illumination != 0:
             logging.debug(f"{sensors.title} was illuminated")
         else:
             logging.debug(f"Sensor {sensors.title} was not illuminated")
+
+        result_str = result_str + f"{sensors.title}, {sensors.illumination},"
+
+    # Write results to csv
+    with open("sensor_results.csv", "a") as sensor_results_file:
+        sensor_results_file.write(
+            f"{sim_idx}, {idx}, {result_str}\n")
+
+    # with open("sensor_results.csv", "a") as sensor_results_file:
+    #     sensor_results_file.write(f"\n")
 
 
 def do_rotation(theta, axis):
@@ -558,7 +570,7 @@ def calculate_rotation_matrix(position, direction):
     # Calculate angle of rotation
     required_angle = np.arccos(np.clip(np.dot(direction, target_z_norm), -1.0, 1.0))
 
-    ## Apply Rodrigues' rotation formula
+    # Apply Rodrigues' rotation formula
     # Compute skew-symmetric cross-product matrix of rotation_axis
     K = np.array([
         [0, -normalised_axis[2], normalised_axis[1]],
@@ -1010,8 +1022,8 @@ def get_rigid_params(config):
     return rigid_arc_step, tilt_angles, sequence_ID, rotation_axis, rotation_step, rigid_arc_positions
 
 
-@profile(stream=open("memory_profile.log", "w"))
-def main():
+# @profile(stream=open("memory_profile.log", "w"))
+def main(sim_idx=0, num_lines=config.simulation["num_lines"]):
     """
     Runs the main program
         1. Initialises planes and areas.
@@ -1024,14 +1036,13 @@ def main():
     """
 
     results_path = config.debugging["data_csv_path"]
-
-    sim_idx = prepare_output(results_path)
+    # num_lines = config.simulation["num_lines"]
 
     # ----- Step 1: Initialize planes and areas  ----- #
     sensorPlane, sourcePlane, aperturePlane, sensorAreas, aperture_areas = initialise_planes_and_areas()
 
     # ----- Step 2: Create lines from source plane ----- #
-    lines = create_lines_from_plane(sourcePlane, config.simulation["num_lines"])
+    lines = create_lines_from_plane(sourcePlane, num_lines)
 
     # ----- Step 3: Create 3D plot and visualize environment ----- #
     fig = initialise_3d_plot(sensorPlane)  # Applies plot formatting and global axes
@@ -1155,16 +1166,15 @@ def main():
         logging.info(f"{plane.title}")
         hit, miss, hit_list, miss_list = evaluate_line_results(sensorPlane, sensorAreas, aperturePlane, aperture_areas,
                                                                lines)
-        handle_results(sensorAreas)
+        handle_results(sensorAreas, sim_idx, idx)
         logging.debug(f"{plane.title} has {hit} hits and {miss} misses")
 
         results[idx, 0] = hit
         results[idx, 1] = miss
 
-        ratio = hit/miss
-
         with open("results.csv", "a") as results_file:
-            results_file.write(f"{sim_idx},{idx}, {results[idx, 0]}, {results[idx, 1]}, {ratio}, {config.simulation["num_lines"]}\n")
+            results_file.write(
+                f"{sim_idx},{idx}, {results[idx, 0]}, {results[idx, 1]},{num_lines}\n")
 
         # Sample lines for visualisation
         logging.debug(f"Selecting hits for visualisation for plane {idx}")
@@ -1204,18 +1214,41 @@ def main():
     print("\nFinished.    \n")
 
 
-# if __name__ == "__main__":
-#     main()
-
-
 if __name__ == "__main__":
-    for i in range(20):
-        print(f"\n--- Simulation Run {i+1} ---")
-        start_time = time.time()
-        main()
-        end_time = time.time()
-        runtime = end_time - start_time
+    main()
 
-        # Append runtime to a separate CSV or include it in results.csv
-        with open("performance.csv", "a") as f:
-            f.write(f"{i},{runtime:.4f}\n")
+
+# @profile(stream=open("memory_profile.log", "w"))
+# def run_all_test(num_lines):
+#     for i in range(20):
+#         logging.info(f"\n--- Simulation Run {i + 1} ---")
+#
+#         sim_idx = prepare_output(config.debugging["data_csv_path"])
+#         start_time = time.time()
+#         main(sim_idx, num_lines)
+#         end_time = time.time()
+#         runtime = end_time - start_time
+#
+#         with open("results.csv", "r") as f:
+#             lines = f.readlines()
+#
+#         updated_lines = []
+#         for line in lines:
+#             if line.startswith(f"{sim_idx},"):
+#                 line = line.strip() + f",{runtime:.4f}\n"
+#             else:
+#                 line = line if line.endswith("\n") else line + "\n"
+#             updated_lines.append(line)
+#
+#         with open("results.csv", "w") as f:
+#             f.writelines(updated_lines)
+#
+#
+# if __name__ == "__main__":
+#
+#     line_tests = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+#
+#
+#     for num_lines in line_tests:
+#         logging.info(f"Testing {num_lines} lines")
+#         run_all_test(num_lines)
