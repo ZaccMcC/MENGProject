@@ -126,16 +126,16 @@ class Plane:
             showlegend=True
         ))
 
-        # Add labels at the corner points
-        for i, (xi, yi, zi) in enumerate(self.corners):
-            fig.add_trace(go.Scatter3d(
-                x=[xi], y=[yi], z=[zi],
-                mode='text',
-                text=f'P{i}',  # Label each corner as P0, P1, P2, etc.
-                textposition='top center',
-                showlegend=False,
-                name=f"{self.title} (corner {i})"
-            ))
+        # # Add labels at the corner points
+        # for i, (xi, yi, zi) in enumerate(self.corners):
+        #     fig.add_trace(go.Scatter3d(
+        #         x=[xi], y=[yi], z=[zi],
+        #         mode='text',
+        #         text=f'P{i}',  # Label each corner as P0, P1, P2, etc.
+        #         textposition='top center',
+        #         showlegend=False,
+        #         name=f"{self.title} (corner {i})"
+        #     ))
 
         # print(f"Plane : {self.title}")
         # print(f"Translated position: {self.position}")

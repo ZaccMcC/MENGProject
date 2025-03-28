@@ -70,7 +70,7 @@
     "tilt_angles": [0]
   },
   "simulation": {
-    "num_lines": 10
+    "num_lines": 100
   },
   "intersection": {
     "max_distance": 100,
@@ -78,7 +78,7 @@
     "tolerance": 0.01
   },
   "visualization": {
-    "show_output_parent": true,
+    "show_output_parent": false,
     "show_sensor_plane": true,
     "show_source_plane": false,
     "show_sensor_area": true,
@@ -97,7 +97,8 @@
   },
   "debugging": {
     "enable_logging": true,
-    "logging_level": "INFO"
+    "logging_level": "INFO",
+    "data_csv_path": "results.csv"
   },
   "performance": {
     "enable_memory_profiling": true,

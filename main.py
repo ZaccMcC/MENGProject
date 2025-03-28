@@ -1,3 +1,6 @@
+import os
+import time
+
 from memory_profiler import profile
 import random
 from arcRotation import arc_movement_vector, rotation_rings
@@ -8,11 +11,34 @@ from areas import Areas  # Import for target areas
 import numpy as np  # For mathematical operations
 import plotly.graph_objects as go  # For 3D visualization
 
+import csv
+
 import logging
 from config import config
 
 
 # Valid logging levels "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
+
+def prepare_output(results_path):
+    """
+
+    Returns:
+
+    """
+    if not os.path.exists(results_path):
+        sim_idx = 0
+        with open(results_path, "w", newline='') as results_file:
+            results_file.write("sim,idx,hits,misses,ratio,ray count\n")
+    else:
+        with open(results_path, "r", newline='') as results_file:
+            reader = list(csv.reader(results_file))
+            if len(reader) <= 1:
+                sim_idx = 0
+            else:
+                last_row = reader[-1]
+                sim_idx = int(last_row[0]) + 1
+
+    return sim_idx
 
 
 def initialise_planes_and_areas():
@@ -996,6 +1022,11 @@ def main():
         6. Evaluates intersections between lines and the sensor plane, visualises results, and calculates hit/miss information.
         7. Displays the final 3D plot and prints the hit/miss results.
     """
+
+    results_path = config.debugging["data_csv_path"]
+
+    sim_idx = prepare_output(results_path)
+
     # ----- Step 1: Initialize planes and areas  ----- #
     sensorPlane, sourcePlane, aperturePlane, sensorAreas, aperture_areas = initialise_planes_and_areas()
 
@@ -1018,9 +1049,6 @@ def main():
     if config.visualization["show_aperture_area"]:
         for aperture in aperture_areas:  # Display all defined apertures on the plot
             fig = visualise_environment(fig, aperture, config.visualization["color_aperture_area"])
-
-    with open("results.csv", "w") as results_file:
-        results_file.write(f"idx, hits, misses\n")
 
     sensorPlane.title = "Parent axis"
     sensorPlane.print_pose()
@@ -1133,8 +1161,10 @@ def main():
         results[idx, 0] = hit
         results[idx, 1] = miss
 
+        ratio = hit/miss
+
         with open("results.csv", "a") as results_file:
-            results_file.write(f"{idx}, {results[idx, 0]}, {results[idx, 1]}\n")
+            results_file.write(f"{sim_idx},{idx}, {results[idx, 0]}, {results[idx, 1]}, {ratio}, {config.simulation["num_lines"]}\n")
 
         # Sample lines for visualisation
         logging.debug(f"Selecting hits for visualisation for plane {idx}")
@@ -1174,5 +1204,18 @@ def main():
     print("\nFinished.    \n")
 
 
+# if __name__ == "__main__":
+#     main()
+
+
 if __name__ == "__main__":
-    main()
+    for i in range(20):
+        print(f"\n--- Simulation Run {i+1} ---")
+        start_time = time.time()
+        main()
+        end_time = time.time()
+        runtime = end_time - start_time
+
+        # Append runtime to a separate CSV or include it in results.csv
+        with open("performance.csv", "a") as f:
+            f.write(f"{i},{runtime:.4f}\n")
