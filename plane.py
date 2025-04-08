@@ -114,7 +114,8 @@ class Plane:
             k=[2, 3, 0, 3],
             color=colour,
             opacity=0.5,
-            name=f"{self.title} (Mesh)"
+            name=f"{self.title} (Mesh)",
+            showlegend=False
         ))
 
             # Add a dummy trace for the legend
@@ -123,7 +124,7 @@ class Plane:
             mode='markers',
             marker=dict(size=5, color=colour, opacity=0.5),
             name=f"{self.title} (Trace)",  # Legend entry
-            showlegend=True
+            showlegend=False
         ))
 
         # # Add labels at the corner points

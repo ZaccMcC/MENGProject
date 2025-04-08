@@ -1,20 +1,44 @@
 {
   "planes": {
     "source_plane": {
-      "position": [0, 0, 1],
-      "direction": [0, 0, -1],
+      "position": [
+        0,
+        0,
+        1
+      ],
+      "direction": [
+        0,
+        0,
+        -1
+      ],
       "width": 4,
       "length": 4
     },
     "sensor_plane": {
-      "position": [0, 0, 0],
-      "direction": [0, 0, 1],
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "direction": [
+        0,
+        0,
+        1
+      ],
       "width": 10,
       "length": 10
     },
     "aperture_plane": {
-      "position": [0, 0, 1],
-      "direction": [0, 0, 1],
+      "position": [
+        0,
+        0,
+        1
+      ],
+      "direction": [
+        0,
+        0,
+        1
+      ],
       "width": 5,
       "length": 5
     }
@@ -22,55 +46,102 @@
   "sensor_areas": {
     "sensor_A": {
       "title": "Sensor A",
-      "position": [-2, -2, 0],
-      "direction": [0, 0, 1],
+      "position": [
+        -1.75,
+        0.5,
+        0
+      ],
+      "direction": [
+        0,
+        0,
+        1
+      ],
       "width": 1.5,
       "length": 1.5
     },
     "sensor_B": {
       "title": "Sensor B",
-      "position": [-2, -3, 0],
-      "direction": [0, 0, 1],
+      "position": [
+        -1.75,
+        -0.5,
+        0
+      ],
+      "direction": [
+        0,
+        0,
+        1
+      ],
       "width": 1.5,
       "length": 1.5
     },
     "sensor_C": {
-    "title": "Sensor C",
-    "position": [3, 2, 0],
-    "direction": [0, 0, 1],
-    "width": 1.5,
-    "length": 1.5
+      "title": "Sensor C",
+      "position": [
+        2.5,
+        0,
+        0
+      ],
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "width": 1.5,
+      "length": 1.5
     },
     "sensor_D": {
-    "title": "Sensor D",
-    "position": [2, 2, 0],
-    "direction": [0, 0, 1],
-    "width": 1.5,
-    "length": 1.5
+      "title": "Sensor D",
+      "position": [
+        3.5,
+        0,
+        0
+      ],
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "width": 1.5,
+      "length": 1.5
     }
   },
   "aperture_areas": {
     "Aperture_A": {
       "title": "Aperture_A",
-      "position": [-2, -2, 1],
-      "direction": [0, 0, 1],
-      "width": 2,
-      "length": 2
+      "position": [
+        -1.75,
+        0,
+        1
+      ],
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "width": 3,
+      "length": 3
     },
     "Aperture_B": {
       "title": "Aperture_B",
-      "position": [2, 2, 1],
-      "direction": [0, 0, 1],
-      "width": 2,
-      "length": 2
+      "position": [
+        3,
+        0,
+        1
+      ],
+      "direction": [
+        0,
+        0,
+        1
+      ],
+      "width": 3,
+      "length": 3
     }
   },
-
   "arc_movement": {
     "execute_movements": true,
-    "initial_rotation": 90,
+    "initial_rotation": 90.0,
     "rotation_axis": "y",
-    "radius": 10,
+    "radius": 10.0,
     "horizontal_circles": false,
     "horizontal_primary": 60,
     "horizontal_secondary": 30,
@@ -78,14 +149,19 @@
     "arc_phi_step": 30,
     "vertical_circles": false,
     "vertical_primary": 10,
-    "vertical_secondary": [0,45],
+    "vertical_secondary": [
+      0,
+      45
+    ],
     "rigid_arc": true,
     "rigid_arc_step": 10,
-    "tilt_angles": [0]
+    "tilt_angles": [
+      0, 45
+    ]
   },
   "simulation": {
-    "num_lines": 1000,
-    "num_runs" : 20
+    "num_lines": 0,
+    "num_runs": 1
   },
   "intersection": {
     "max_distance": 100,
@@ -105,7 +181,7 @@
     "color_sensor_area": "green",
     "color_aperture_area": "black",
     "show_axes": true,
-    "animated_plot": false,
+    "animated_plot": true,
     "frame_rate": 500,
     "hits_to_display": 2,
     "misses_to_display": 2

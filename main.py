@@ -89,7 +89,7 @@ def initialise_3d_plot(sensorPlane):
             yaxis=dict(title="Y-Axis", range=[-lims, lims]),  # Adjust based on your data
             zaxis=dict(title="Z-Axis", range=[-lims, lims])  # Keep Z range similar
         ),
-        title="3D Planes and Lines visualization"
+        title="Sensor illumination simulation"
 
     )
 
@@ -252,35 +252,29 @@ def evaluate_line_results(sensorPlane, sensorArea, aperturePlane, apertureAreas,
 
 def handle_results(sensor_objects, sim_idx, idx):
     """
-    Logs hit results for each sensor at a given simulation index and arc position index.
-    Creates a header dynamically on the first write.
+    Logs one row of hit counts per sensor for a given simulation and arc position.
+    Structure: [sim, idx, Sensor A, Sensor B, ..., Sensor N]
     """
 
     file_path = "sensor_results.csv"
     write_header = not os.path.exists(file_path) or (sim_idx == 0 and idx == 0)
 
+    # Prepare row
     row_data = [sim_idx, idx]
-    sensor_titles = []
-
-    for sensor in sensor_objects:
-        sensor_titles.append(sensor.title)
-        row_data.append(sensor.title)
-        row_data.append(sensor.illumination)
+    sensor_titles = [sensor.title for sensor in sensor_objects]
+    sensor_hits = [sensor.illumination for sensor in sensor_objects]
 
     # Write header if needed
     if write_header:
-        header = ["sim", "idx"]
-        for title in sensor_titles:
-            header.append(f"{title}")
-            header.append("hits")
+        header = ["sim", "idx"] + sensor_titles
         with open(file_path, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(header)
 
-    # Append row
+    # Write data row
     with open(file_path, "a", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(row_data)
+        writer.writerow(row_data + sensor_hits)
 
 
 def do_rotation(theta, axis):
@@ -410,6 +404,7 @@ def generate_arc_animation(fig, rotated_planes, lines_traces, results):
     plane_trace = []
     axis_traces = []
     frame_titles = list(np.zeros(len(rotated_planes)))
+    percentage = []
 
     num_frames = len(rotated_planes)
 
@@ -422,7 +417,12 @@ def generate_arc_animation(fig, rotated_planes, lines_traces, results):
                                0])  # makes plane_trace[idx] type = "plotly.graph_objs._mesh3d.Mesh3d"
         axis_traces.append(list(plane.plot_axis(go.Figure()).data))  # makes axis_traces[idx] type = "tuple"
 
-        frame_titles[idx] = f"Position {idx} - Hits {results[idx][0]:.0f}, Misses {results[idx][1]:.0f} "
+        total = results[idx][0] + results[idx][1]
+
+        percentage.append((results[idx][0] / total) * 100)
+
+        # frame_titles[idx] = f"Position {idx} - Hits {results[idx][0]:.0f}, Misses {results[idx][1]:.0f} "
+        frame_titles[idx] = f"Position {idx} - Hits {percentage[idx]:.0f} "
 
     # check_fig_data(fig)
 
@@ -528,8 +528,8 @@ def generate_static_arc_plot(fig, rotated_planes, line_objects):
         fig = plane.plot_axis(fig)  # Adds axis vectors
 
         # logging.debug(f"Adding line traces for plane {idx}")
-        for line in line_objects[idx]:
-            fig.add_trace(line)
+        # for line in line_objects[idx]:
+        #     fig.add_trace(line)
 
     return fig
 
@@ -1218,42 +1218,42 @@ def main(sim_idx=0, num_lines=config.simulation["num_lines"]):
 
     print("\nFinished.    \n")
 
-
-if __name__ == "__main__":
-    main()
-
-
-# @profile(stream=open("memory_profile.log", "w"))
-# def run_all_test(num_lines):
-#     for i in range(config.simulation["num_runs"]):
-#         logging.info(f"\n--- Simulation Run {i + 1} ---")
-#
-#         sim_idx = prepare_output(config.debugging["data_csv_path"])
-#         start_time = time.time()
-#         main(sim_idx, num_lines)
-#         end_time = time.time()
-#         runtime = end_time - start_time
-#
-#         with open("results.csv", "r") as f:
-#             lines = f.readlines()
-#
-#         updated_lines = []
-#         for line in lines:
-#             if line.startswith(f"{sim_idx},"):
-#                 line = line.strip() + f",{runtime:.4f}\n"
-#             else:
-#                 line = line if line.endswith("\n") else line + "\n"
-#             updated_lines.append(line)
-#
-#         with open("results.csv", "w") as f:
-#             f.writelines(updated_lines)
-#
 #
 # if __name__ == "__main__":
-#
-#     line_tests = [100, 600, 1200]
-#
-#
-#     for num_lines in line_tests:
-#         logging.info(f"Testing {num_lines} lines")
-#         run_all_test(num_lines)
+#     main()
+
+
+@profile(stream=open("memory_profile.log", "w"))
+def run_all_test(num_lines):
+    for i in range(config.simulation["num_runs"]):
+        logging.info(f"\n--- Simulation Run {i + 1} ---")
+
+        sim_idx = prepare_output(config.debugging["data_csv_path"])
+        start_time = time.time()
+        main(sim_idx, num_lines)
+        end_time = time.time()
+        runtime = end_time - start_time
+
+        with open("results.csv", "r") as f:
+            lines = f.readlines()
+
+        updated_lines = []
+        for line in lines:
+            if line.startswith(f"{sim_idx},"):
+                line = line.strip() + f",{runtime:.4f}\n"
+            else:
+                line = line if line.endswith("\n") else line + "\n"
+            updated_lines.append(line)
+
+        with open("results.csv", "w") as f:
+            f.writelines(updated_lines)
+
+
+if __name__ == "__main__":
+
+    line_tests = [300]
+
+
+    for num_lines in line_tests:
+        logging.info(f"Testing {num_lines} lines")
+        run_all_test(num_lines)
