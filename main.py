@@ -16,6 +16,12 @@ import csv
 import logging
 from config import config
 
+import plotly.io as pio
+import os
+
+from PIL import Image
+import glob
+
 
 # Valid logging levels "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
 
@@ -39,6 +45,21 @@ def prepare_output(results_path):
                 sim_idx = int(last_row[0]) + 1
 
     return sim_idx
+
+
+def create_gif_from_frames(frame_folder="animation_frames", gif_name="animation.gif", duration=500):
+    frame_files = sorted(glob.glob(f"{frame_folder}/frame_*.png"))
+    frames = [Image.open(f) for f in frame_files]
+
+    if frames:
+        frames[0].save(gif_name, format='GIF',
+                       append_images=frames[1:],
+                       save_all=True,
+                       duration=duration,  # milliseconds per frame
+                       loop=0)
+        print(f"GIF saved as {gif_name}")
+    else:
+        print("No frames found to create GIF.")
 
 
 def initialise_planes_and_areas():
@@ -502,6 +523,39 @@ def generate_arc_animation(fig, rotated_planes, lines_traces, results):
 
     # Set the frames to the figure
     fig.frames = frames
+
+    output_dir = "animation_frames"
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Save the static scene objects (sensor plane, aperture, areas, etc.)
+    static_traces = list(fig.data[:])  # Copy existing traces (before animation)
+
+    for i in range(len(rotated_planes)):
+        temp_fig = go.Figure()
+
+        # Add static traces (sensor plane, areas, etc.)
+        for trace in static_traces:
+            temp_fig.add_trace(trace)
+
+        # Add animated elements for current frame
+        temp_fig.add_trace(plane_trace[i])
+        for axis_trace in axis_traces[i]:
+            temp_fig.add_trace(axis_trace)
+        for line_trace in lines_traces[i]:
+            temp_fig.add_trace(line_trace)
+
+        temp_fig.update_layout(
+            scene=fig.layout.scene,
+            title=frame_titles[i],
+            autosize=False,
+            width=1000,
+            height=800,
+            margin=dict(l=0, r=0, t=40, b=0),
+            scene_camera=dict(eye=dict(x=1.2, y=1.2, z=1.2)),
+            showlegend=False)
+
+        # Export the frame
+        pio.write_image(temp_fig, f"{output_dir}/frame_{i:03d}.png", width=1000, height=800, scale=3)
 
     return fig
 
@@ -1208,6 +1262,11 @@ def main(sim_idx=0, num_lines=config.simulation["num_lines"]):
         if config.visualization["animated_plot"]:
             fig = generate_arc_animation(fig, rotated_planes, line_scatter_objects, results)
             logging.info("Animated plot generated.")
+
+            create_gif_from_frames()
+
+            # pio.write_html(fig, file="arc_animation.html", auto_open=True)
+
         else:
             fig = generate_static_arc_plot(fig, rotated_planes, line_scatter_objects)
             logging.info("Static plot generated.")

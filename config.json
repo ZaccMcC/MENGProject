@@ -181,7 +181,7 @@
     "color_sensor_area": "green",
     "color_aperture_area": "black",
     "show_axes": true,
-    "animated_plot": true,
+    "animated_plot": false,
     "frame_rate": 500,
     "hits_to_display": 2,
     "misses_to_display": 2
