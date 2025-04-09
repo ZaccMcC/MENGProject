@@ -2,7 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
-def define_plot(sensor_results, p_data, axs):
+
+def define_plot(sensor_results, p_data, axs, title):
     """
     Makes plots for subplot
 
@@ -15,11 +16,12 @@ def define_plot(sensor_results, p_data, axs):
         axs.plot(p_data, sensor_results[column], label=column)
 
     # Step 3: Customise the plot
-    axs.set_title('Hits Over Time by Area')
+    axs.set_title(f'{title} Illumination per Sensor')
     axs.set_xlabel('Time (index)')
     axs.set_ylabel('Hits')
     axs.legend()
     axs.grid(True)
+
 
 def prepare_result_data(results_data_frame):
     """
@@ -33,6 +35,7 @@ def prepare_result_data(results_data_frame):
     position_data = results_data_frame.iloc[:, 1]
 
     return area_data, position_data
+
 
 # --------------------------
 # Simulated data
@@ -57,10 +60,10 @@ phy_sensor_results, phy_sensor_position = prepare_result_data(physical_data)
 fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
 # Populate with experimental data
-define_plot(sim_sensor_results, sim_sensor_position, axes[0])
+define_plot(sim_sensor_results, sim_sensor_position, axes[0], "Simulated")
 
 # Populate with actual data
-define_plot(phy_sensor_results, phy_sensor_position, axes[1])
+define_plot(phy_sensor_results, phy_sensor_position, axes[1], "Experimental")
 
 # Step 4: Show the plot
 plt.show()

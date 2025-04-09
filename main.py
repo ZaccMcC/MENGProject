@@ -844,6 +844,7 @@ def move_plane_along_arc(start_plane, all_positions, primary_angle, rotation_axi
                 # Calculate rotation to face origin
                 R, angle = calculate_rotation_matrix(position, new_plane.direction)
                 new_plane.rotate_plane(R)
+                rotation_angle_deg = np.degrees(angle)
                 logging.debug(f"Plane {idx} rotated {np.round(np.degrees(angle), 2)}° to face origin")
 
             rotated_planes.append(new_plane)
@@ -1041,7 +1042,8 @@ def rigid_arc_rotation(radius, arc_resolution_deg, tilt_angles):
         np.ndarray: Stacked array of all rotated arc positions in Cartesian coordinates (shape: [N_total, 3])
     """
     # Generate arc angles from 0 to 180 degrees (semi-circle)
-    theta_arc = np.radians(np.arange(0, 180 + arc_resolution_deg, arc_resolution_deg))
+    arc_angles = np.arange(0, 180 + arc_resolution_deg, arc_resolution_deg)
+    theta_arc = np.radians(arc_angles)
 
     # Arc in x-z plane
     x = radius * np.cos(theta_arc)
@@ -1052,6 +1054,10 @@ def rigid_arc_rotation(radius, arc_resolution_deg, tilt_angles):
 
     all_rotated_positions = []
 
+    with open("rigid_arc_angles.csv", "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["tilt_angle_deg", "arc_angle_deg"])  # Header row
+
     for tilt_angle_deg in tilt_angles:
         # Rotation matrix about x-axis
         tilt_rad = np.radians(tilt_angle_deg)
@@ -1061,6 +1067,11 @@ def rigid_arc_rotation(radius, arc_resolution_deg, tilt_angles):
             [0, np.sin(tilt_rad), np.cos(tilt_rad)]
         ])
 
+        for arc_angle in arc_angles:
+            with open("rigid_arc_angles.csv", "a", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow([tilt_angle_deg, arc_angle])
+
         # Apply rotation
         rotated_arc = R_x @ arc_points  # shape: [3, N]
         all_rotated_positions.append(rotated_arc.T)  # shape: [N, 3]
@@ -1068,6 +1079,8 @@ def rigid_arc_rotation(radius, arc_resolution_deg, tilt_angles):
         logging.debug(f"Rotated arc size: {np.shape(rotated_arc.T)}")
 
         logging.debug(f"Rotated arc: {np.shape(all_rotated_positions)}")
+
+
 
     return np.vstack(all_rotated_positions)  # shape: [N_total, 3]
 
@@ -1348,6 +1361,7 @@ def main(sim_idx=0, num_lines=config.simulation["num_lines"]):
 
     print("\nFinished.    \n")
 
+
 #
 # if __name__ == "__main__":
 #     main()
@@ -1381,8 +1395,7 @@ def run_all_test(num_lines):
 
 if __name__ == "__main__":
 
-    line_tests = [300]
-
+    line_tests = [10000]
 
     for num_lines in line_tests:
         logging.info(f"Testing {num_lines} lines")

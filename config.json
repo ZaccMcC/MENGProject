@@ -11,8 +11,8 @@
         0,
         -1
       ],
-      "width": 4,
-      "length": 4
+      "width": 10,
+      "length": 10
     },
     "sensor_plane": {
       "position": [
@@ -45,10 +45,10 @@
   },
   "sensor_areas": {
     "sensor_A": {
-      "title": "Sensor A",
+      "title": "A0",
       "position": [
-        -1.75,
-        0.5,
+        3.5,
+        0,
         0
       ],
       "direction": [
@@ -60,22 +60,7 @@
       "length": 1.5
     },
     "sensor_B": {
-      "title": "Sensor B",
-      "position": [
-        -1.75,
-        -0.5,
-        0
-      ],
-      "direction": [
-        0,
-        0,
-        1
-      ],
-      "width": 1.5,
-      "length": 1.5
-    },
-    "sensor_C": {
-      "title": "Sensor C",
+      "title": "A1",
       "position": [
         2.5,
         0,
@@ -89,11 +74,26 @@
       "width": 1.5,
       "length": 1.5
     },
-    "sensor_D": {
-      "title": "Sensor D",
+    "sensor_C": {
+      "title": "A2",
       "position": [
-        3.5,
+        -1.75,
+        0.5,
+        0
+      ],
+      "direction": [
         0,
+        0,
+        1
+      ],
+      "width": 1.5,
+      "length": 1.5
+    },
+    "sensor_D": {
+      "title": "A3",
+      "position": [
+        -1.75,
+        -0.5,
         0
       ],
       "direction": [
@@ -155,7 +155,7 @@
       130
     ],
     "rigid_arc": true,
-    "rigid_arc_step": 5,
+    "rigid_arc_step": 45,
     "tilt_angles": [
       0
     ]
@@ -170,7 +170,7 @@
     "tolerance": 0.01
   },
   "visualization": {
-    "show_output_parent": false,
+    "show_output_parent": true,
     "show_sensor_plane": true,
     "show_source_plane": false,
     "show_sensor_area": true,
@@ -182,7 +182,7 @@
     "color_sensor_area": "green",
     "color_aperture_area": "black",
     "show_axes": true,
-    "animated_plot": true,
+    "animated_plot": false,
     "frame_rate": 500,
     "hits_to_display": 2,
     "misses_to_display": 2
