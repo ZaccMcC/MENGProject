@@ -119,7 +119,7 @@
         1
       ],
       "width": 3,
-      "length": 3
+      "length": 1.5
     },
     "Aperture_B": {
       "title": "Aperture_B",
@@ -133,7 +133,7 @@
         0,
         1
       ],
-      "width": 3,
+      "width": 1.5,
       "length": 3
     }
   },
