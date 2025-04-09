@@ -46,11 +46,7 @@
   "sensor_areas": {
     "sensor_A": {
       "title": "A0",
-      "position": [
-        3.5,
-        0,
-        0
-      ],
+      "position": [0,-3.25, 0],
       "direction": [
         0,
         0,
@@ -61,11 +57,7 @@
     },
     "sensor_B": {
       "title": "A1",
-      "position": [
-        2.5,
-        0,
-        0
-      ],
+      "position": [0, -1.25, 0],
       "direction": [
         0,
         0,
@@ -76,11 +68,7 @@
     },
     "sensor_C": {
       "title": "A2",
-      "position": [
-        -1.75,
-        0.5,
-        0
-      ],
+      "position": [1, 2.25, 0],
       "direction": [
         0,
         0,
@@ -91,11 +79,7 @@
     },
     "sensor_D": {
       "title": "A3",
-      "position": [
-        -1.75,
-        -0.5,
-        0
-      ],
+      "position": [-1, 2.25, 0],
       "direction": [
         0,
         0,
@@ -108,18 +92,10 @@
   "aperture_areas": {
     "Aperture_A": {
       "title": "Aperture_A",
-      "position": [
-        -1.75,
-        0,
-        1
-      ],
-      "direction": [
-        0,
-        0,
-        1
-      ],
-      "width": 3,
-      "length": 1.5
+      "position": [0, -2.25, 1],
+      "direction": [0, 0, 1],
+      "width": 4,
+      "length": 2
     },
     "Aperture_B": {
       "title": "Aperture_B",
@@ -133,8 +109,8 @@
         0,
         1
       ],
-      "width": 1.5,
-      "length": 3
+      "width": 2,
+      "length": 4
     }
   },
   "arc_movement": {

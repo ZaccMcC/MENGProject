@@ -1395,7 +1395,7 @@ def run_all_test(num_lines):
 
 if __name__ == "__main__":
 
-    line_tests = [10000]
+    line_tests = [1000]
 
     for num_lines in line_tests:
         logging.info(f"Testing {num_lines} lines")
