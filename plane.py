@@ -118,14 +118,14 @@ class Plane:
             showlegend=False
         ))
 
-            # Add a dummy trace for the legend
-        fig.add_trace(go.Scatter3d(
-            x=[x[0]], y=[y[0]], z=[z[0]],  # Single point (dummy)
-            mode='markers',
-            marker=dict(size=5, color=colour, opacity=0.5),
-            name=f"{self.title} (Trace)",  # Legend entry
-            showlegend=False
-        ))
+        #     # Add a dummy trace for the legend
+        # fig.add_trace(go.Scatter3d(
+        #     x=[x[0]], y=[y[0]], z=[z[0]],  # Single point (dummy)
+        #     mode='markers',
+        #     marker=dict(size=5, color=colour, opacity=0.5),
+        #     name=f"{self.title} (Trace)",  # Legend entry
+        #     showlegend=False
+        # ))
 
         # # Add labels at the corner points
         # for i, (xi, yi, zi) in enumerate(self.corners):
@@ -206,8 +206,8 @@ class Plane:
                 y=[start[1], end[1]],
                 z=[start[2], end[2]],
                 mode='lines+markers',
-                line=dict(color=local_axis_colours[i], width=5),
-                marker=dict(size=8, color=local_axis_colours[i], opacity=0.8),
+                line=dict(color=local_axis_colours[i], width=4),
+                marker=dict(size=3, color=local_axis_colours[i], opacity=0.8),
                 name=local_axis_names[i],
                 showlegend=False
             ))

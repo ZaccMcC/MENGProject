@@ -151,12 +151,13 @@
     "vertical_primary": 10,
     "vertical_secondary": [
       0,
-      45
+      65,
+      130
     ],
     "rigid_arc": true,
-    "rigid_arc_step": 10,
+    "rigid_arc_step": 5,
     "tilt_angles": [
-      0, 45
+      0
     ]
   },
   "simulation": {
@@ -169,7 +170,7 @@
     "tolerance": 0.01
   },
   "visualization": {
-    "show_output_parent": true,
+    "show_output_parent": false,
     "show_sensor_plane": true,
     "show_source_plane": false,
     "show_sensor_area": true,
@@ -181,7 +182,7 @@
     "color_sensor_area": "green",
     "color_aperture_area": "black",
     "show_axes": true,
-    "animated_plot": false,
+    "animated_plot": true,
     "frame_rate": 500,
     "hits_to_display": 2,
     "misses_to_display": 2

@@ -62,6 +62,60 @@ def create_gif_from_frames(frame_folder="animation_frames", gif_name="animation.
         print("No frames found to create GIF.")
 
 
+def crop_gif_center(input_gif="animation.gif", output_gif="animation_cropped.gif", crop_width=400, crop_height=300):
+    """
+    Crops the center of each frame in a GIF and saves a new GIF.
+    :param input_gif: Path to input GIF.
+    :param output_gif: Path to save cropped GIF.
+    :param crop_width: Desired width of cropped region.
+    :param crop_height: Desired height of cropped region.
+    """
+    with Image.open(input_gif) as im:
+        frames = []
+        try:
+            while True:
+                frame = im.copy().convert("RGBA")
+                width, height = frame.size
+                left = (width - crop_width) // 2
+                top = (height - crop_height) // 2
+                right = left + crop_width
+                bottom = top + crop_height
+                cropped = frame.crop((left, top, right, bottom))
+                frames.append(cropped)
+                im.seek(im.tell() + 1)
+        except EOFError:
+            pass
+
+        if frames:
+            frames[0].save(
+                output_gif,
+                format="GIF",
+                append_images=frames[1:],
+                save_all=True,
+                duration=im.info.get("duration", 500),
+                loop=0
+            )
+            print(f"Cropped GIF saved as {output_gif}")
+        else:
+            print("No frames found in input GIF.")
+
+
+def crop_image_center(input_path="static_plot.png", output_path="static_plot_cropped.png",
+                      crop_width=400, crop_height=300):
+    """
+    Crops the center of a single image (PNG, JPEG, etc.)
+    """
+    with Image.open(input_path) as img:
+        width, height = img.size
+        left = (width - crop_width) // 2
+        top = (height - crop_height) // 2
+        right = left + crop_width
+        bottom = top + crop_height
+        cropped = img.crop((left, top, right, bottom))
+        cropped.save(output_path)
+        print(f"Cropped static image saved as {output_path}")
+
+
 def initialise_planes_and_areas():
     """
 Initialises all planes and the target area.
@@ -429,12 +483,14 @@ def generate_arc_animation(fig, rotated_planes, lines_traces, results):
 
     num_frames = len(rotated_planes)
 
+    colours = ["yellow"] + ["yellow"] * (len(rotated_planes) - 1)
+
     for idx, plane in enumerate(rotated_planes):
         # Debugging - Check if planes are being added
         logging.debug(f"Preparing elements for frame {idx} for plane at position {plane.position}")
 
         # Get plane and axis traces
-        plane_trace.append(plane.planes_plot_3d(go.Figure(), "yellow").data[
+        plane_trace.append(plane.planes_plot_3d(go.Figure(), colours[idx]).data[
                                0])  # makes plane_trace[idx] type = "plotly.graph_objs._mesh3d.Mesh3d"
         axis_traces.append(list(plane.plot_axis(go.Figure()).data))  # makes axis_traces[idx] type = "tuple"
 
@@ -584,6 +640,19 @@ def generate_static_arc_plot(fig, rotated_planes, line_objects):
         # logging.debug(f"Adding line traces for plane {idx}")
         # for line in line_objects[idx]:
         #     fig.add_trace(line)
+
+    # Match the animated plot layout
+    fig.update_layout(
+        autosize=False,
+        width=1000,
+        height=800,
+        margin=dict(l=0, r=0, t=40, b=0),
+        scene_camera=dict(eye=dict(x=1.2, y=1.2, z=1.2)),
+        showlegend=False
+    )
+
+    pio.write_image(fig, "static_plot.png", width=1000, height=800, scale=3)
+    print("Static plot saved as static_plot.png")
 
     return fig
 
@@ -1136,7 +1205,7 @@ def main(sim_idx=0, num_lines=config.simulation["num_lines"]):
     vertical_circles = config.arc_movement["vertical_circles"]
     rigid_arc = config.arc_movement["rigid_arc"]
 
-    #Initialise variables
+    # Initialise variables
     arc_phi_angle = None
     arc_theta_angle = None
     sequence_id = None
@@ -1264,12 +1333,14 @@ def main(sim_idx=0, num_lines=config.simulation["num_lines"]):
             logging.info("Animated plot generated.")
 
             create_gif_from_frames()
-
+            crop_gif_center(crop_width=1000, crop_height=800)
             # pio.write_html(fig, file="arc_animation.html", auto_open=True)
 
         else:
             fig = generate_static_arc_plot(fig, rotated_planes, line_scatter_objects)
             logging.info("Static plot generated.")
+
+            crop_image_center("static_plot.png", "static_plot_cropped.png", crop_width=1000, crop_height=800)
 
         fig.show()
     else:
