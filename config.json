@@ -126,7 +126,7 @@
     "rigid_arc": true,
     "rigid_arc_step": 1,
     "tilt_angles": [
-      0, -45, 45
+      0, -45, 45, 30
     ]
   },
   "simulation": {
