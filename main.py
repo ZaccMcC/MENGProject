@@ -1345,8 +1345,8 @@ def main(sim_idx=0, num_lines=config.simulation["num_lines"]):
             fig = generate_arc_animation(fig, rotated_planes, line_scatter_objects, results)
             logging.info("Animated plot generated.")
 
-            create_gif_from_frames()
-            crop_gif_center(crop_width=1000, crop_height=800)
+            # create_gif_from_frames()
+            # crop_gif_center(crop_width=1000, crop_height=800)
             # pio.write_html(fig, file="arc_animation.html", auto_open=True)
 
         else:
@@ -1395,7 +1395,7 @@ def run_all_test(num_lines):
 
 if __name__ == "__main__":
 
-    line_tests = [1000]
+    line_tests = [10000]
 
     for num_lines in line_tests:
         logging.info(f"Testing {num_lines} lines")

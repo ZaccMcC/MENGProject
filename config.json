@@ -68,7 +68,7 @@
     },
     "sensor_C": {
       "title": "A2",
-      "position": [1, 2.25, 0],
+      "position": [-1, 2.25, 0],
       "direction": [
         0,
         0,
@@ -79,7 +79,8 @@
     },
     "sensor_D": {
       "title": "A3",
-      "position": [-1, 2.25, 0],
+
+      "position": [1, 2.25, 0],
       "direction": [
         0,
         0,
@@ -99,16 +100,8 @@
     },
     "Aperture_B": {
       "title": "Aperture_B",
-      "position": [
-        3,
-        0,
-        1
-      ],
-      "direction": [
-        0,
-        0,
-        1
-      ],
+      "position": [0, 2.25, 1],
+      "direction": [0, 0, 1],
       "width": 2,
       "length": 4
     }
@@ -131,9 +124,9 @@
       130
     ],
     "rigid_arc": true,
-    "rigid_arc_step": 45,
+    "rigid_arc_step": 1,
     "tilt_angles": [
-      0
+      0, -45, 45
     ]
   },
   "simulation": {
@@ -146,7 +139,7 @@
     "tolerance": 0.01
   },
   "visualization": {
-    "show_output_parent": true,
+    "show_output_parent": false,
     "show_sensor_plane": true,
     "show_source_plane": false,
     "show_sensor_area": true,

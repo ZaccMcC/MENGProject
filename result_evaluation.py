@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+import os
 
 
 def define_plot(sensor_results, p_data, axs, title, x_label, y_label):
@@ -103,3 +104,44 @@ define_plot(scaled_sim_sensor_results, sim_sensor_position, axes[0], "Simulated"
 define_plot(phy_sensor_results, phy_sensor_position, axes[1], "Experimental (Filtered)", "Time (ms)", "Voltage")
 
 plt.show()
+
+
+# --------------------------
+# Create combined data frame
+# --------------------------
+#  Make a copy of the angle data and apply the offset
+angle_data["tilt_angle_physical_ref"] = angle_data["tilt_angle_deg"] + 90
+
+# If needed, wrap around 360 degrees (optional, only if angles might go over 360)
+angle_data["tilt_angle_physical_ref"] = angle_data["tilt_angle_physical_ref"] % 360
+
+# Combine scaled sensor results with both arc and adjusted tilt angles
+combined_df = scaled_sim_sensor_results.copy()
+combined_df["tilt_angle_deg_physical"] = angle_data["tilt_angle_physical_ref"].values
+combined_df["arc_angle_deg"] = angle_data["arc_angle_deg"].values
+
+# Static angle tests from experimental results
+target_angles = [
+    (90, 90),
+    (130, 130),
+    (20, 20),
+    (160, 160),
+    (50, 50)
+]
+
+filtered_df = combined_df[
+    combined_df[["tilt_angle_deg_physical", "arc_angle_deg"]]
+    .apply(tuple, axis=1)
+    .isin(target_angles)
+]
+
+filename = "combined_simulation_data_physical_reference.csv"
+write_header = not os.path.isfile(filename)
+
+# Save filtered rows only
+filtered_df.to_csv(
+    filename,
+    mode='a',
+    header=write_header,
+    index=False
+)
