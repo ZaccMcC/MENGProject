@@ -117,10 +117,10 @@ def launch_gui(config):
 
     root.mainloop()
 
-
-# Load your config.json
-with open("config.json") as f:
-    config = json.load(f)
+#
+# # Load your config.json
+# with open("config.json") as f:
+#     config = json.load(f)
 
 # Launch GUI with interactive slider
-launch_gui(config)
+launch_gui(0)

@@ -112,6 +112,8 @@ plt.show()
 #  Make a copy of the angle data and apply the offset
 angle_data["tilt_angle_physical_ref"] = angle_data["tilt_angle_deg"] + 90
 
+print(angle_data["tilt_angle_physical_ref"])
+
 # If needed, wrap around 360 degrees (optional, only if angles might go over 360)
 angle_data["tilt_angle_physical_ref"] = angle_data["tilt_angle_physical_ref"] % 360
 

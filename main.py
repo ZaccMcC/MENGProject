@@ -580,38 +580,38 @@ def generate_arc_animation(fig, rotated_planes, lines_traces, results):
     # Set the frames to the figure
     fig.frames = frames
 
-    output_dir = "animation_frames"
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Save the static scene objects (sensor plane, aperture, areas, etc.)
-    static_traces = list(fig.data[:])  # Copy existing traces (before animation)
-
-    for i in range(len(rotated_planes)):
-        temp_fig = go.Figure()
-
-        # Add static traces (sensor plane, areas, etc.)
-        for trace in static_traces:
-            temp_fig.add_trace(trace)
-
-        # Add animated elements for current frame
-        temp_fig.add_trace(plane_trace[i])
-        for axis_trace in axis_traces[i]:
-            temp_fig.add_trace(axis_trace)
-        for line_trace in lines_traces[i]:
-            temp_fig.add_trace(line_trace)
-
-        temp_fig.update_layout(
-            scene=fig.layout.scene,
-            title=frame_titles[i],
-            autosize=False,
-            width=1000,
-            height=800,
-            margin=dict(l=0, r=0, t=40, b=0),
-            scene_camera=dict(eye=dict(x=1.2, y=1.2, z=1.2)),
-            showlegend=False)
-
-        # Export the frame
-        pio.write_image(temp_fig, f"{output_dir}/frame_{i:03d}.png", width=1000, height=800, scale=3)
+    # output_dir = "animation_frames"
+    # os.makedirs(output_dir, exist_ok=True)
+    #
+    # # Save the static scene objects (sensor plane, aperture, areas, etc.)
+    # static_traces = list(fig.data[:])  # Copy existing traces (before animation)
+    #
+    # for i in range(len(rotated_planes)):
+    #     temp_fig = go.Figure()
+    #
+    #     # Add static traces (sensor plane, areas, etc.)
+    #     for trace in static_traces:
+    #         temp_fig.add_trace(trace)
+    #
+    #     # Add animated elements for current frame
+    #     temp_fig.add_trace(plane_trace[i])
+    #     for axis_trace in axis_traces[i]:
+    #         temp_fig.add_trace(axis_trace)
+    #     for line_trace in lines_traces[i]:
+    #         temp_fig.add_trace(line_trace)
+    #
+    #     temp_fig.update_layout(
+    #         scene=fig.layout.scene,
+    #         title=frame_titles[i],
+    #         autosize=False,
+    #         width=1000,
+    #         height=800,
+    #         margin=dict(l=0, r=0, t=40, b=0),
+    #         scene_camera=dict(eye=dict(x=1.2, y=1.2, z=1.2)),
+    #         showlegend=False)
+    #
+    #     # Export the frame
+    #     pio.write_image(temp_fig, f"{output_dir}/frame_{i:03d}.png", width=1000, height=800, scale=3)
 
     return fig
 
