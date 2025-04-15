@@ -14,14 +14,12 @@ import plotly.graph_objects as go  # For 3D visualization
 import csv
 
 import logging
-from config import config
 
 import plotly.io as pio
 import os
 
 from PIL import Image
 import glob
-
 
 # Valid logging levels "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
 
@@ -116,12 +114,11 @@ def crop_image_center(input_path="static_plot.png", output_path="static_plot_cro
         print(f"Cropped static image saved as {output_path}")
 
 
-def initialise_planes_and_areas():
+def initialise_planes_and_areas(config):
     """
 Initialises all planes and the target area.
 Returns: sensorPlane, sourcePlane, aperturePlane, and sensorArea
 """
-
     # Define the source plane
     # Defines its position (centre point), its direction (facing down)
     sourcePlane = Plane("Source Plane", **config.planes["source_plane"])
@@ -616,7 +613,7 @@ def generate_arc_animation(fig, rotated_planes, lines_traces, results):
     return fig
 
 
-def generate_static_arc_plot(fig, rotated_planes, line_objects):
+def generate_static_arc_plot(config, fig, rotated_planes, line_objects):
     """
     Generates a static 3D plot of all plane positions in the arc.
 
@@ -651,8 +648,11 @@ def generate_static_arc_plot(fig, rotated_planes, line_objects):
         showlegend=False
     )
 
-    pio.write_image(fig, "static_plot.png", width=1000, height=800, scale=3)
-    print("Static plot saved as static_plot.png")
+    if config.output["save_static_png"]:
+        pio.write_image(fig, "static_plot.png", width=1000, height=800, scale=3)
+        logging.info("Static plot saved as static_plot.png")
+    else:
+        logging.info("Static plot image disabled.")
 
     return fig
 
@@ -1164,7 +1164,9 @@ def get_rigid_params(config):
 
 
 # @profile(stream=open("memory_profile.log", "w"))
-def main(sim_idx=0, num_lines=config.simulation["num_lines"]):
+def main(config, sim_idx=0, num_lines=None):
+    if num_lines is None:
+        num_lines = config.simulation["num_lines"]
     """
     Runs the main program
         1. Initialises planes and areas.
@@ -1180,7 +1182,7 @@ def main(sim_idx=0, num_lines=config.simulation["num_lines"]):
     # num_lines = config.simulation["num_lines"]
 
     # ----- Step 1: Initialize planes and areas  ----- #
-    sensorPlane, sourcePlane, aperturePlane, sensorAreas, aperture_areas = initialise_planes_and_areas()
+    sensorPlane, sourcePlane, aperturePlane, sensorAreas, aperture_areas = initialise_planes_and_areas(config)
 
     # ----- Step 2: Create lines from source plane ----- #
     lines = create_lines_from_plane(sourcePlane, num_lines)
@@ -1347,13 +1349,15 @@ def main(sim_idx=0, num_lines=config.simulation["num_lines"]):
 
             # create_gif_from_frames()
             # crop_gif_center(crop_width=1000, crop_height=800)
-            # pio.write_html(fig, file="arc_animation.html", auto_open=True)
+            pio.write_html(fig, file="arc_animation.html", auto_open=True)
 
         else:
-            fig = generate_static_arc_plot(fig, rotated_planes, line_scatter_objects)
+
+            fig = generate_static_arc_plot(config, fig, rotated_planes, line_scatter_objects)
             logging.info("Static plot generated.")
 
-            crop_image_center("static_plot.png", "static_plot_cropped.png", crop_width=1000, crop_height=800)
+            if config.output["save_static_png"]:
+                crop_image_center("static_plot.png", "static_plot_cropped.png", crop_width=1000, crop_height=800)
 
         fig.show()
     else:
@@ -1368,13 +1372,13 @@ def main(sim_idx=0, num_lines=config.simulation["num_lines"]):
 
 
 @profile(stream=open("memory_profile.log", "w"))
-def run_all_test(num_lines):
+def run_all_test(config, num_lines):
     for i in range(config.simulation["num_runs"]):
         logging.info(f"\n--- Simulation Run {i + 1} ---")
 
         sim_idx = prepare_output(config.debugging["data_csv_path"])
         start_time = time.time()
-        main(sim_idx, num_lines)
+        main(config, sim_idx, num_lines)
         end_time = time.time()
         runtime = end_time - start_time
 
@@ -1394,9 +1398,9 @@ def run_all_test(num_lines):
 
 
 if __name__ == "__main__":
-
+    from config import config
     line_tests = [10000]
 
     for num_lines in line_tests:
         logging.info(f"Testing {num_lines} lines")
-        run_all_test(num_lines)
+        run_all_test(config, num_lines)
