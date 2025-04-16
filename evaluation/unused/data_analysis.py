@@ -5,7 +5,7 @@ import os
 # --------------------------
 # Load results.csv (main summary)
 # --------------------------
-results_path = "results.csv"
+results_path = "../../data/results.csv"
 if not os.path.exists(results_path):
     raise FileNotFoundError("Missing results.csv")
 
@@ -29,7 +29,7 @@ axes[0].legend(title="Ray Count")
 # --------------------------
 # Load sensor_results.csv (new layout)
 # --------------------------
-sensor_path = "sensor_results.csv"
+sensor_path = "../../data/sensor_results.csv"
 if not os.path.exists(sensor_path):
     raise FileNotFoundError("Missing sensor_results.csv")
 

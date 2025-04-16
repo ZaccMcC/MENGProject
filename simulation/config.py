@@ -29,4 +29,4 @@ class Config:
         log_level = self.debugging.get("logging_level", "INFO").upper()
         logging.basicConfig(level=getattr(logging, log_level, logging.INFO))
 
-config = Config(file_path="config.json")
+config = Config(file_path="../config.json")

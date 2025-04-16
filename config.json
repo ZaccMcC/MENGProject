@@ -84,7 +84,7 @@
     "rigid_arc": true,
     "rigid_arc_step": 10,
     "tilt_angles": [
-      -60,-40,-20,0,20,40,60
+      0
     ]
   },
   "simulation": {
@@ -97,7 +97,7 @@
     "tolerance": 0.01
   },
   "visualization": {
-    "show_output_parent": true,
+    "show_output_parent": false,
     "show_sensor_plane": true,
     "show_source_plane": false,
     "show_sensor_area": true,
@@ -117,7 +117,7 @@
   "debugging": {
     "enable_logging": true,
     "logging_level": "INFO",
-    "data_csv_path": "results.csv"
+    "data_csv_path": "data/results.csv"
   },
   "performance": {
     "enable_memory_profiling": true,
@@ -125,6 +125,7 @@
   },
   "output": {
     "save_static_png": false,
-    "save_animated_gif": false
+    "save_animated_gif": false,
+    "Sim_title": "Basic"
   }
 }

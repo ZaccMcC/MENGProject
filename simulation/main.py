@@ -23,17 +23,31 @@ import glob
 
 # Valid logging levels "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
 
+
 def prepare_output(results_path):
     """
-
-    Returns:
-
+    Prepares the output file by creating it if it does not exist
+    and adding a header row.
     """
+    print("Preparing output")
+
+    # Ensure the `results_path` is resolved relative to the project directory
+    project_root = os.path.dirname(os.path.abspath(__file__))  # Path to main.py
+    results_path = os.path.normpath(os.path.join(project_root, "..", results_path))
+
+    # Ensure the parent directory exists
+    os.makedirs(os.path.dirname(results_path), exist_ok=True)
+
     if not os.path.exists(results_path):
         sim_idx = 0
+        print(f"Creating {results_path}")
+        # Create the file and write the header
         with open(results_path, "w", newline='') as results_file:
-            results_file.write("sim,idx,hits,misses,ray count,runtime\n")
+            results_file.write("sim,idx,hits,misses,ray count,sim title,runtime\n")
+        print(f"Writing header to {results_path}")
     else:
+        print(f"File {results_path} already exists")
+        # Check the file content to determine the current simulation index
         with open(results_path, "r", newline='') as results_file:
             reader = list(csv.reader(results_file))
             if len(reader) <= 1:
@@ -43,6 +57,7 @@ def prepare_output(results_path):
                 sim_idx = int(last_row[0]) + 1
 
     return sim_idx
+
 
 
 def create_gif_from_frames(frame_folder="animation_frames", gif_name="animation.gif", duration=500):
@@ -322,13 +337,13 @@ def evaluate_line_results(sensorPlane, sensorArea, aperturePlane, apertureAreas,
     return hit, miss, hit_list, miss_list
 
 
-def handle_results(sensor_objects, sim_idx, idx):
+def handle_results(sensor_objects, sim_idx, idx, config):
     """
     Logs one row of hit counts per sensor for a given simulation and arc position.
     Structure: [sim, idx, Sensor A, Sensor B, ..., Sensor N]
     """
 
-    file_path = "sensor_results.csv"
+    file_path = "../data/sensor_results.csv"
     write_header = not os.path.exists(file_path) or (sim_idx == 0 and idx == 0)
 
     # Prepare row
@@ -649,7 +664,8 @@ def generate_static_arc_plot(config, fig, rotated_planes, line_objects):
     )
 
     if config.output["save_static_png"]:
-        pio.write_image(fig, "static_plot.png", width=1000, height=800, scale=3)
+        logging.info("Saving static plot as PNG file.")
+        pio.write_image(fig, "static_plot.png", width=1000, height=800, scale=1)
         logging.info("Static plot saved as static_plot.png")
     else:
         logging.info("Static plot image disabled.")
@@ -1054,7 +1070,7 @@ def rigid_arc_rotation(radius, arc_resolution_deg, tilt_angles):
 
     all_rotated_positions = []
 
-    with open("rigid_arc_angles.csv", "w", newline="") as f:
+    with open("../data/rigid_arc_angles.csv", "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["tilt_angle_deg", "arc_angle_deg"])  # Header row
 
@@ -1068,7 +1084,7 @@ def rigid_arc_rotation(radius, arc_resolution_deg, tilt_angles):
         ])
 
         for arc_angle in arc_angles:
-            with open("rigid_arc_angles.csv", "a", newline="") as f:
+            with open("../data/rigid_arc_angles.csv", "a", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow([tilt_angle_deg, arc_angle])
 
@@ -1309,15 +1325,15 @@ def main(config, sim_idx=0, num_lines=None):
         logging.info(f"{plane.title}")
         hit, miss, hit_list, miss_list = evaluate_line_results(sensorPlane, sensorAreas, aperturePlane, aperture_areas,
                                                                lines)
-        handle_results(sensorAreas, sim_idx, idx)
+        handle_results(sensorAreas, sim_idx, idx, config)
         logging.debug(f"{plane.title} has {hit} hits and {miss} misses")
 
         results[idx, 0] = hit
         results[idx, 1] = miss
 
-        with open("results.csv", "a") as results_file:
+        with open("../data/results.csv", "a") as results_file:
             results_file.write(
-                f"{sim_idx},{idx}, {results[idx, 0]}, {results[idx, 1]},{num_lines}\n")
+                f"{sim_idx},{idx}, {results[idx, 0]}, {results[idx, 1]},{num_lines}, {config.output["Sim_title"]}\n")
 
         # Sample lines for visualisation
         logging.debug(f"Selecting hits for visualisation for plane {idx}")
@@ -1349,7 +1365,7 @@ def main(config, sim_idx=0, num_lines=None):
 
             # create_gif_from_frames()
             # crop_gif_center(crop_width=1000, crop_height=800)
-            pio.write_html(fig, file="arc_animation.html", auto_open=True)
+            pio.write_html(fig, file="../output/arc_animation.html", auto_open=True)
 
         else:
 
@@ -1371,7 +1387,7 @@ def main(config, sim_idx=0, num_lines=None):
 #     main()
 
 
-@profile(stream=open("memory_profile.log", "w"))
+@profile(stream=open("../memory_profile.log", "w"))
 def run_all_test(config, num_lines):
     for i in range(config.simulation["num_runs"]):
         logging.info(f"\n--- Simulation Run {i + 1} ---")
@@ -1382,7 +1398,7 @@ def run_all_test(config, num_lines):
         end_time = time.time()
         runtime = end_time - start_time
 
-        with open("results.csv", "r") as f:
+        with open("../data/results.csv", "r") as f:
             lines = f.readlines()
 
         updated_lines = []
@@ -1393,12 +1409,16 @@ def run_all_test(config, num_lines):
                 line = line if line.endswith("\n") else line + "\n"
             updated_lines.append(line)
 
-        with open("results.csv", "w") as f:
+        with open("../data/results.csv", "w") as f:
             f.writelines(updated_lines)
 
 
 if __name__ == "__main__":
-    from config import config
+    from config import Config
+
+
+    config = Config(file_path="C:/Users/temp/IdeaProjects/MENGProject/test_configs/test_directly_below.json")
+
     line_tests = [10000]
 
     for num_lines in line_tests:

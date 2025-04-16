@@ -14,7 +14,7 @@ from main import run_all_test
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-CONFIG_FILE = "config.json"
+CONFIG_FILE = "../config.json"
 
 READABLE_NAMES = {
     # Sections

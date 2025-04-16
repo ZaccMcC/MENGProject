@@ -109,7 +109,7 @@ def results_comparison(sim_sensor_results, sim_sensor_position, angle_data, phy_
         .isin(target_angles)
     ]
 
-    filename = "combined_simulation_data_physical_reference.csv"
+    filename = "../../output/combined_simulation_data_physical_reference.csv"
     write_header = not os.path.isfile(filename)
 
     # Save filtered rows only
@@ -178,23 +178,23 @@ def sensor_surface_plots(angle_df, sensor_data):
 # --------------------------
 
 # Simulated data input
-simulated_data = pd.read_csv('sensor_results.csv')
+simulated_data = pd.read_csv('../../data/sensor_results.csv')
 
 # Prepare simulated data
 sim_sensor_results, sim_sensor_position = prepare_result_data(simulated_data, 2)
 
-simulation_info = pd.read_csv('results.csv')
+simulation_info = pd.read_csv('../../data/results.csv')
 
 total_rays = simulation_info.iloc[1, 4]
 
-angle_data = pd.read_csv("rigid_arc_angles.csv")
+angle_data = pd.read_csv("../../data/rigid_arc_angles.csv")
 
 # --------------------------
 # Physical data
 # --------------------------
 
 # Physical data input
-physical_data = pd.read_csv('physical_data_messy.csv')
+physical_data = pd.read_csv('../../data/physical_data_messy.csv')
 
 # Prepare physical data
 phy_sensor_results, phy_sensor_position = prepare_result_data(physical_data, 6)
