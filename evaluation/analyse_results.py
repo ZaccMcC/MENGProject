@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from utils_io import load_csv
@@ -51,7 +50,8 @@ def plot_hit_percentage_combined():
     axs[1].legend()
     axs[1].grid(True)
 
-    plt.suptitle(f"Hit Percentage Analysis - {sim_title}", fontsize=16)
+    # plt.suptitle(f"Hit Percentage Analysis - {sim_title}", fontsize=16)
+    plt.suptitle(f"Hit Percentage Analysis", fontsize=16)
     plt.tight_layout()
     plt.show()
 
@@ -72,7 +72,7 @@ def plot_runtime_vs_gain():
     axs[0].plot(grouped["ray count"], grouped["runtime"], marker="o", color="red")
     axs[0].set_title("Average Runtime vs Ray Count")
 
-    axs[1].bar(grouped["ray count"], grouped["hit_gain"], color="green")
+    axs[1].plot(grouped["ray count"], grouped["hit_gain"], color="green")
     axs[1].set_title("Marginal Gain in Hit %")
 
     axs[2].plot(grouped["ray count"], grouped["cost_per_gain"], marker="o", color="purple")
@@ -122,7 +122,6 @@ def compare_sim_vs_real():
 
 
 def sensor_surface_plots():
-    from mpl_toolkits.mplot3d import Axes3D
 
     angle_df = load_csv("../data/rigid_arc_angles.csv")
     sensor_df = load_csv("../data/sensor_results.csv")

@@ -82,7 +82,7 @@
       130
     ],
     "rigid_arc": true,
-    "rigid_arc_step": 10,
+    "rigid_arc_step": 0.5,
     "tilt_angles": [
       0
     ]

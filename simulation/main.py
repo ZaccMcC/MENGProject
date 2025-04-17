@@ -1,4 +1,4 @@
-import os
+
 import time
 
 from memory_profiler import profile
@@ -1416,8 +1416,7 @@ def run_all_test(config, num_lines):
 if __name__ == "__main__":
     from config import Config
 
-
-    config = Config(file_path="C:/Users/temp/IdeaProjects/MENGProject/test_configs/test_directly_below.json")
+    config = Config(file_path="C:/Users/temp/IdeaProjects/MENGProject/config.json")
 
     line_tests = [10000]
 
